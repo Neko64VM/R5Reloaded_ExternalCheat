@@ -1,13 +1,14 @@
 # 概要
 高い拡張性と機能性を持つフレームワークの上に構築されたR5Reloaded向けのシンプルな外部チート。
 
+![IMG](R5R_01.png)
+
 ## 機能
 * AimBot
 * ESP
-* other...
-* Simple Overlay
-* PatternScanner
-* ConfigSystem
+* NoRecoil
+* WeaponCham
+* 観戦者リスト
 
 ## 実行
 必要なライブラリは全て揃っているので、VisualStudioでビルドすれば普通に動くはずです。  
