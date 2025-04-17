@@ -149,6 +149,7 @@ json ConfigManager::GetDefaultConfig()
         { "AimMaxDistance", 25 },
         // Visual
         { "VisualEnable", true },
+        { "GlowEnable", true },
         { "ESP_NPC", true },
         { "ESP_Team", false },
         { "bBox", true },
@@ -244,6 +245,7 @@ void ConfigManager::LoadSetting(const std::string filename)
             g.AimMaxDistance = JSON["AimMaxDistance"];
             // Visual
             g.VisualEnable = JSON["VisualEnable"];
+            g.GlowEnable = JSON["GlowEnable"];
             g.ESP_NPC = JSON["ESP_NPC"];
             g.ESP_Team = JSON["ESP_Team"];
             g.bBox = JSON["bBox"];
@@ -325,6 +327,7 @@ void ConfigManager::SaveSetting(const std::string filename)
         JSON["AimMaxDistance"] = g.AimMaxDistance;
         // Visual
         JSON["VisualEnable"] = g.VisualEnable;
+        JSON["GlowEnable"] = g.GlowEnable;
         JSON["ESP_NPC"] = g.ESP_NPC;
         JSON["ESP_Team"] = g.ESP_Team;
         JSON["bBox"] = g.bBox;

@@ -91,8 +91,6 @@ void CFramework::RenderESP()
         // 各種チェック
         if (g.ESP_MaxDistance < flDistance)
             continue;
-        else if (!g.ESP_Team && pEntity->m_iTeamNum == pLocal->m_iTeamNum)
-            continue;
 
         BoundingBox box = pEntity->GetBoundingBoxData(ViewMatrix);
 
@@ -116,6 +114,16 @@ void CFramework::RenderESP()
             tempColor = g.Color_ESP_AimTarget;
 
         ImColor color = WithAlpha(tempColor, g.m_flGlobalAlpha);
+
+        // Glow
+        if (g.GlowEnable)
+            pEntity->EnableGlow(GlowColor{ color.Value.x, color.Value.y, color.Value.z }, GlowMode{ 101, 6, 85, 96 });
+        else if (!g.GlowEnable && m.Read<int>(pEntity->m_address + 0x310) != 0)
+            pEntity->DisableGlow();
+
+        // TeamCheck
+        if (!g.ESP_Team && pEntity->m_iTeamNum == pLocal->m_iTeamNum)
+            continue;
 
         // Line
         if (g.bLine)

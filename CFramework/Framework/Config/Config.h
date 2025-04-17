@@ -43,6 +43,7 @@ struct GlobalVars
 
     // Visual
     bool VisualEnable{ true };
+    bool GlowEnable{ false };
     bool ESP_NPC{ true };
     bool ESP_Team{ false };
     bool bBox{ true };

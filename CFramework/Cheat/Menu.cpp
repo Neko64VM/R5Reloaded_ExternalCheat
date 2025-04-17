@@ -90,6 +90,7 @@ void CFramework::RenderMenu()
         ImGui::Spacing();
 
         ImGui::Checkbox("ESP", &g.VisualEnable);
+        ImGui::Checkbox("Glow", &g.GlowEnable);
         ImGui::Checkbox("NPC ESP", &g.ESP_NPC);
         ImGui::Checkbox("Team ESP", &g.ESP_Team);
 
