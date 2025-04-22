@@ -116,10 +116,18 @@ void CFramework::RenderESP()
         ImColor color = WithAlpha(tempColor, g.m_flGlobalAlpha);
 
         // Glow
-        if (g.GlowEnable)
+        switch (g.GlowStyle)
+        {
+        case 0:
+            if (m.Read<int>(pEntity->m_address + 0x310) != 0)
+                pEntity->DisableGlow();
+            break;
+        case 1:
             pEntity->EnableGlow(GlowColor{ color.Value.x, color.Value.y, color.Value.z }, GlowMode{ 101, 6, 85, 96 });
-        else if (!g.GlowEnable && m.Read<int>(pEntity->m_address + 0x310) != 0)
-            pEntity->DisableGlow();
+            break;
+        default:
+            break;
+        }
 
         // TeamCheck
         if (!g.ESP_Team && pEntity->m_iTeamNum == pLocal->m_iTeamNum)
@@ -238,6 +246,10 @@ void CFramework::RenderESP()
             for (int i = 0; i < 128; i++)
             {
                 Vector2 BoneScreen{};
+
+                if (Vec3_Empty(Vector3(b.entry[i].x, b.entry[i].y, b.entry[i].z)))
+                    continue;
+
                 auto bonePos = Vector3(b.entry[i].x, b.entry[i].y, b.entry[i].z) + pEntity->m_vecAbsOrigin;
                 if (!WorldToScreen(ViewMatrix, g.rcSize, bonePos, BoneScreen))
                     break;
@@ -268,6 +280,10 @@ void CFramework::RenderESP()
                     }
 
                     break;
+                }
+                else
+                {
+                    target = CEntity();
                 }
             }
         }
@@ -312,15 +328,6 @@ void CFramework::RenderESP()
 
             if (!Vec2_Empty(SmoothedAngle))
                 pLocal->SetViewAngle(SmoothedAngle);
-
-            lastTarget = target;
         }
-    }
-    else if (g.AimBotEnable) 
-    {
-        if (!AimBotKeyCheck(g.dwAimKey0, g.dwAimKey1, g.AimKeyMode))
-            lastTarget = CEntity();
-        else if (target.m_address == NULL)
-            lastTarget = CEntity();
     }
 }

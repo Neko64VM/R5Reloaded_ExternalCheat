@@ -1,15 +1,15 @@
 #include "CFramework.h"
 
 // ImGui::Combo/ImGui::List等で使う文字列群
-const char* AimBoneList[] = { "Head", "Neck", "Chest", "Spine" };
+const char* AimBoneList[] = { "Head", "Chest"};
 const char* AimKeyModeList[] = { "None Key", "and", "or" };
 const char* BoxRenderModeList[] = { "Bone", "BoundingBox" };
 const char* BoxTypeList[] = { "Simple", "Cornered" };
 const char* CrosshairList[] = { "Cross", "Circle" };
+const char* GlowStyleList[] = { "None", "Simple" };
 const char* ViewModelGlowTypeList[] = { "None", "Border Only", "Border + Filled"};
-
-std::vector<const char*> MenuStringList = { "AimBot", "Visual", "Misc", "Setting" };
-std::vector<const char*> MenuIconList = { ICON_FA_CROSSHAIRS, ICON_FA_EYE, ICON_FA_BARS, ICON_FA_GEAR };
+const std::vector<const char*> MenuStringList = { "AimBot", "Visual", "Misc", "Setting" };
+const std::vector<const char*> MenuIconList = { ICON_FA_CROSSHAIRS, ICON_FA_EYE, ICON_FA_BARS, ICON_FA_GEAR };
 
 // Menu, Config
 int Index = 0;
@@ -90,7 +90,6 @@ void CFramework::RenderMenu()
         ImGui::Spacing();
 
         ImGui::Checkbox("ESP", &g.VisualEnable);
-        ImGui::Checkbox("Glow", &g.GlowEnable);
         ImGui::Checkbox("NPC ESP", &g.ESP_NPC);
         ImGui::Checkbox("Team ESP", &g.ESP_Team);
 
@@ -113,17 +112,21 @@ void CFramework::RenderMenu()
         ImGui::Spacing();
         ImGui::Spacing();
 
+        ImGui::Combo("GlowMode", &g.GlowStyle, GlowStyleList, IM_ARRAYSIZE(GlowStyleList));
         ImGui::Combo("BoxMode", &g.ESP_BoxRenderMode, BoxRenderModeList, IM_ARRAYSIZE(BoxRenderModeList));
         ImGui::Combo("BoxType", &g.ESP_BoxType, BoxTypeList, IM_ARRAYSIZE(BoxTypeList));
-
+        
         ImGui::EndChild();
         break;
     case 2: { // misc
         ImGui::BeginChild("##C020", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 3.5f), true);
 
+        ImGui::Text("Misc");
+        ImGui::Separator();
+        ImGui::Spacing();
+
         //ImGui::Checkbox("BunnyHop", &g.g_bHop);
         ImGui::Checkbox("RecoilControll System", &g.RecoilControllSystem);
-        ImGui::Checkbox("ViewModel Glow", &g.ViewModelGlow);
 
         ImGui::EndChild();
         ImGui::BeginChild("##C021", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.25f), true);
@@ -140,7 +143,6 @@ void CFramework::RenderMenu()
         ImGui::Text("ViewModel Glow");
         ImGui::Separator();
         ImGui::Spacing();
-        ImGui::Checkbox("Enable##VMG", &g.ViewModelGlow);
         ImGui::CustomSliderFloat("RainbowSpeed", "##VMG", &g.VMG_Rate, 1.f, 15.f, "%.f");
         ImGui::Combo("Type##VMG", &g.VMG_Type, ViewModelGlowTypeList, IM_ARRAYSIZE(ViewModelGlowTypeList));
 

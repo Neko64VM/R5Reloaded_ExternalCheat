@@ -149,7 +149,7 @@ json ConfigManager::GetDefaultConfig()
         { "AimMaxDistance", 25 },
         // Visual
         { "VisualEnable", true },
-        { "GlowEnable", true },
+        { "GlowStyle", 0 },
         { "ESP_NPC", true },
         { "ESP_Team", false },
         { "bBox", true },
@@ -173,7 +173,6 @@ json ConfigManager::GetDefaultConfig()
         { "RecoilControllSystem", false },
         { "RCS_Scale", 1.f },
 
-        { "ViewModelGlow", false },
         { "VMG_Rate", 5.f },
         { "VMG_Type", 0 },
         // Color
@@ -245,7 +244,7 @@ void ConfigManager::LoadSetting(const std::string filename)
             g.AimMaxDistance = JSON["AimMaxDistance"];
             // Visual
             g.VisualEnable = JSON["VisualEnable"];
-            g.GlowEnable = JSON["GlowEnable"];
+            g.GlowStyle = JSON["GlowStyle"];
             g.ESP_NPC = JSON["ESP_NPC"];
             g.ESP_Team = JSON["ESP_Team"];
             g.bBox = JSON["bBox"];
@@ -267,7 +266,6 @@ void ConfigManager::LoadSetting(const std::string filename)
             g.MaxFramerate = JSON["MaxFramerate"];
             g.RecoilControllSystem = JSON["RecoilControllSystem"]; // RCS
             g.RCS_Scale = JSON["RCS_Scale"];
-            g.ViewModelGlow = JSON["ViewModelGlow"]; // ViewModelGlow
             g.VMG_Rate = JSON["VMG_Rate"];
             g.VMG_Type = JSON["VMG_Type"];
             // Color
@@ -327,7 +325,7 @@ void ConfigManager::SaveSetting(const std::string filename)
         JSON["AimMaxDistance"] = g.AimMaxDistance;
         // Visual
         JSON["VisualEnable"] = g.VisualEnable;
-        JSON["GlowEnable"] = g.GlowEnable;
+        JSON["GlowStyle"] = g.GlowStyle;
         JSON["ESP_NPC"] = g.ESP_NPC;
         JSON["ESP_Team"] = g.ESP_Team;
         JSON["bBox"] = g.bBox;
@@ -348,7 +346,6 @@ void ConfigManager::SaveSetting(const std::string filename)
         JSON["CrosshairType"] = g.CrosshairType;
         JSON["MaxFramerate"] = g.MaxFramerate;
 
-        JSON["ViewModelGlow"] = g.ViewModelGlow;
         JSON["VMG_Rate"] = g.VMG_Rate;
         JSON["VMG_Type"] = g.VMG_Type;
 

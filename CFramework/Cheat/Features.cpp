@@ -27,35 +27,33 @@ void CFramework::MiscAll()
         }
     }
 
-    if (g.ViewModelGlow)
+    // ViewModel Glow
+    auto viewmodel_list = GetViewModelList();
+
+    GlowMode mode{ 0, 0, 0, 0 };
+    ImColor rainbow = GenerateRainbow(g.VMG_Rate);
+
+    switch (g.VMG_Type)
     {
-        auto viewmodel_list = GetViewModelList();
+    case 0:
+        mode = GlowMode(0, 0, 60, 90);
+        break;
+    case 1:
+        mode = GlowMode(0, 6, 90, 0);
+        break;
+    case 2:
+        mode = GlowMode(12, 6, 90, 0);
+        break;
+    default:
+        break;
+    }
 
-        GlowMode mode{ 0, 0, 0, 0 };
-        ImColor rainbow = GenerateRainbow(g.VMG_Rate);
-
-        switch (g.VMG_Type)
-        {
-        case 0:
-            mode = GlowMode(0, 0, 60, 90);
-            break;
-        case 1:
-            mode = GlowMode(0, 6, 127, 0);
-            break;
-        case 2:
-            mode = GlowMode(12, 6, 127, 0);
-            break;
-        default:
-            break;
-        }
-
-        for (auto& vmodel : viewmodel_list)
-        {
-            m.Write<int>(vmodel + 0x310, 1);
-            m.Write<int>(vmodel + 0x320, 2);
-            m.Write<GlowMode>(vmodel + 0x27C, mode);
-            m.Write<GlowColor>(vmodel + 0x1D0, GlowColor(rainbow.Value.x, rainbow.Value.y, rainbow.Value.z));
-        }
+    for (auto& vmodel : viewmodel_list)
+    {
+        m.Write<int>(vmodel + 0x310, 1);
+        m.Write<int>(vmodel + 0x320, 2);
+        m.Write<GlowMode>(vmodel + 0x27C, mode);
+        m.Write<GlowColor>(vmodel + 0x1D0, GlowColor(rainbow.Value.x, rainbow.Value.y, rainbow.Value.z));
     }
 }
 

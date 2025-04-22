@@ -43,7 +43,7 @@ struct GlobalVars
 
     // Visual
     bool VisualEnable{ true };
-    bool GlowEnable{ false };
+    int GlowStyle = 0;
     bool ESP_NPC{ true };
     bool ESP_Team{ false };
     bool bBox{ true };
@@ -66,7 +66,6 @@ struct GlobalVars
     int MaxFramerate{ 185 };
     bool RecoilControllSystem{ false };
     float RCS_Scale{ 1.f };
-    bool ViewModelGlow{ false };
     float VMG_Rate{ 5.f };
     int VMG_Type{ 0 };
 
