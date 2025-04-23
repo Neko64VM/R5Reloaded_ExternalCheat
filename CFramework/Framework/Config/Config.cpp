@@ -169,7 +169,7 @@ json ConfigManager::GetDefaultConfig()
         { "CrosshairSize", 5 },
         { "CrosshairType", 0 },
         { "MaxFramerate", 165 },
-
+        { "AimAssistMod", 0.6f },
         { "RecoilControllSystem", false },
         { "RCS_Scale", 1.f },
 
@@ -264,6 +264,7 @@ void ConfigManager::LoadSetting(const std::string filename)
             g.CrosshairSize = JSON["CrosshairSize"];
             g.CrosshairType = JSON["CrosshairType"];
             g.MaxFramerate = JSON["MaxFramerate"];
+            g.AimAssistMod = JSON["AimAssistMod"];
             g.RecoilControllSystem = JSON["RecoilControllSystem"]; // RCS
             g.RCS_Scale = JSON["RCS_Scale"];
             g.VMG_Rate = JSON["VMG_Rate"];
@@ -345,7 +346,7 @@ void ConfigManager::SaveSetting(const std::string filename)
         JSON["CrosshairSize"] = g.CrosshairSize;
         JSON["CrosshairType"] = g.CrosshairType;
         JSON["MaxFramerate"] = g.MaxFramerate;
-
+        JSON["AimAssistMod"] = g.AimAssistMod;
         JSON["VMG_Rate"] = g.VMG_Rate;
         JSON["VMG_Type"] = g.VMG_Type;
 

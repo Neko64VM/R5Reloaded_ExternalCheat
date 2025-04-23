@@ -64,6 +64,7 @@ struct GlobalVars
     int CrosshairSize{ 5 };
     int CrosshairType{ 0 };
     int MaxFramerate{ 185 };
+    float AimAssistMod{ 0.6f };
     bool RecoilControllSystem{ false };
     float RCS_Scale{ 1.f };
     float VMG_Rate{ 5.f };

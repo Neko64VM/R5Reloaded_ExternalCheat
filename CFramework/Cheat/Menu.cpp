@@ -126,25 +126,19 @@ void CFramework::RenderMenu()
         ImGui::Spacing();
 
         //ImGui::Checkbox("BunnyHop", &g.g_bHop);
-        ImGui::Checkbox("RecoilControll System", &g.RecoilControllSystem);
+        ImGui::Checkbox("RCS", &g.RecoilControllSystem);
 
         ImGui::EndChild();
-        ImGui::BeginChild("##C021", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.25f), true);
-        
-        ImGui::Text("RecoilControll System");
+        ImGui::BeginChild("##C021", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.75f), true);
+
+        ImGui::Text("AimAssist Value Changer");
         ImGui::Separator();
         ImGui::Spacing();
-        ImGui::Checkbox("Enable##RCS", &g.RecoilControllSystem);
-        ImGui::CustomSliderFloat("RCS Scale", "##RCS_SCL", &g.RCS_Scale, 0.f, 1.f, "%.2f");
 
-        ImGui::EndChild();
-        ImGui::BeginChild("##C022", ImVec2(ImGui::GetContentRegionAvail()), true);
+        ImGui::CustomSliderFloat("AimAssist", "##aa", &g.AimAssistMod, 0.f, 1.f, "%.2f");
 
-        ImGui::Text("ViewModel Glow");
-        ImGui::Separator();
-        ImGui::Spacing();
-        ImGui::CustomSliderFloat("RainbowSpeed", "##VMG", &g.VMG_Rate, 1.f, 15.f, "%.f");
-        ImGui::Combo("Type##VMG", &g.VMG_Type, ViewModelGlowTypeList, IM_ARRAYSIZE(ViewModelGlowTypeList));
+        if (ImGui::Button("Apply", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
+            m.Write<float>(m.m_dwClientBaseAddr + offset::AimAssistVal, g.AimAssistMod);
 
         ImGui::EndChild();
     } break;
@@ -267,9 +261,22 @@ void CFramework::RenderMenu()
         ImGui::EndChild();
         break;
     case 2: // misc
-        ImGui::BeginChild("##120", ImVec2(ImGui::GetContentRegionAvail()), true);
+        ImGui::BeginChild("##C120", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 3.5f), true);
 
-        
+        ImGui::Text("RecoilControll System");
+        ImGui::Separator();
+        ImGui::Spacing();
+        ImGui::Checkbox("Enable##RCS", &g.RecoilControllSystem);
+        ImGui::CustomSliderFloat("RCS Scale", "##RCS_SCL", &g.RCS_Scale, 0.f, 1.f, "%.2f");
+
+        ImGui::EndChild();
+        ImGui::BeginChild("##C121", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.75f), true);
+
+        ImGui::Text("ViewModel Glow");
+        ImGui::Separator();
+        ImGui::Spacing();
+        ImGui::CustomSliderFloat("RainbowSpeed", "##VMG", &g.VMG_Rate, 1.f, 15.f, "%.f");
+        ImGui::Combo("Type##VMG", &g.VMG_Type, ViewModelGlowTypeList, IM_ARRAYSIZE(ViewModelGlowTypeList));
 
         ImGui::EndChild();
         break;
