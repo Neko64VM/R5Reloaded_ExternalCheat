@@ -1,5 +1,7 @@
 #include "CFramework.h"
 
+auto gui = std::make_unique<Renderer>();
+
 void CFramework::MiscAll()
 {
     CEntity local = CEntity();
@@ -31,7 +33,7 @@ void CFramework::MiscAll()
     auto viewmodel_list = GetViewModelList();
 
     GlowMode mode{ 0, 0, 0, 0 };
-    ImColor rainbow = GenerateRainbow(g.VMG_Rate);
+    ImColor rainbow = gui->GenerateRainbow(g.VMG_Rate);
 
     switch (g.VMG_Type)
     {

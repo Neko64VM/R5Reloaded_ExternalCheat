@@ -21,18 +21,38 @@ public:
 
 	void RenderInfo();
 	void RenderMenu();
-	void RenderESP();
+    void RenderESP();
 private:
     // Thread safe.
+    std::mutex local_mutex;
     std::mutex ent_list_mutex;
     std::mutex spec_list_mutex;
     std::mutex vmodel_list_mutex;
+
+    CEntity local{};
     std::vector<CEntity> m_vecEntityList{};
     std::vector<std::string> m_vecSpectatorList{};
     std::vector<uintptr_t> m_vecViewModelList{};
-    std::vector<CEntity> GetEntityList();
-    std::vector<std::string> GetSpectatorList();
-    std::vector<uintptr_t> GetViewModelList();
+
+    std::vector<CEntity> GetEntityList() {
+        std::lock_guard<std::mutex> lock(ent_list_mutex);
+        return m_vecEntityList;
+    }
+
+    std::vector<std::string> GetSpectatorList() {
+        std::lock_guard<std::mutex> lock(spec_list_mutex);
+        return m_vecSpectatorList;
+    }
+
+    std::vector<uintptr_t> GetViewModelList() {
+        std::lock_guard<std::mutex> lock(vmodel_list_mutex);
+        return m_vecViewModelList;
+    }
+
+    CEntity* GetLocal() {
+        std::lock_guard<std::mutex> lock(local_mutex);
+        return &local;
+    }
 
     ImColor TEXT_COLOR_DEFAULT{ 1.f, 1.f, 1.f, 1.f };
     ImColor TEXT_COLOR_ATTENTION{ 1.f, 1.f, 0.f, 1.f };
@@ -40,18 +60,25 @@ private:
 
     // AimBot KeyChecker
     bool AimBotKeyCheck(DWORD& AimKey0, DWORD& AimKey1, int AimKeyMode);
+};
+
+class Renderer
+{
+public:
+    ImColor TEXT_COLOR{ 1.f, 1.f, 1.f, 1.f };
 
     // Render.cpp
     ImVec2 ToImVec2(const ImVec2& value); // Convert to int
     ImVec2 ToImVec2(const Vector2& value);
-    ImColor WithAlpha(const ImColor& color, const float& alpha);
+    ImColor ApplyAlpha(const ImColor& color, const float& alpha);
     float GetHueFromTime(float speed = 5.0f);
     ImColor GenerateRainbow(float speed = 5.0f);
-    void DrawLine(const Vector2 p1, const Vector2 p2, ImColor color, float thickness = 1.f);
-    void DrawBox(int right, int left, int top, int bottom, ImColor color, float thickness = 1.f);
-    void DrawCircle(const Vector2 pos, float size, ImColor color);
-    void DrawCircle(const Vector2 pos, float size, ImColor color, float alpha);
-    void DrawCircleFilled(const Vector2 pos, float size, ImColor color, float alpha);
+    void Line(const Vector2 p1, const Vector2 p2, ImColor color, float thickness = 1.f);
+    void Circle(const Vector2 pos, float size, ImColor color);
+    void CircleA(const Vector2 pos, float size, ImColor color, float alpha);
+    void CircleFilled(const Vector2 pos, float size, ImColor color, float alpha);
+    void Rect(Vector2 min, Vector2 max, ImColor color);
+    void CorneredBox(Vector2 min, Vector2 max, int scale, ImColor color);
     void RectFilled(int x0, int y0, int x1, int y1, ImColor color);
     void RectFilled(int x0, int y0, int x1, int y1, ImColor color, float alpha);
     void HealthBar(int x, int y, int w, int h, int value, int v_max, ImColor shadow, float global_alpha);

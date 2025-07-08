@@ -5,7 +5,12 @@ struct BoundingBox {
 	int left, right, top, bottom;
 };
 
-struct BoneEntry {
+struct alignas(0x20) Collision {
+	Vector3 vecMin{};
+	Vector3 vecMax{};
+};
+
+struct CBone {
 	char* junk0[0xCC]{};
 	float x{};
 	char* junk1[0xC]{};
@@ -14,8 +19,8 @@ struct BoneEntry {
 	float z{};
 };
 
-struct BoneArray {
-	BoneEntry entry[128]{};
+struct CPlayerBoneArray {
+	CBone entry[128]{};
 };
 
 class CEntity
@@ -45,8 +50,7 @@ public:
 	bool IsDead();
 	bool IsSpectator();
 
-	Vector3 vecMin();
-	Vector3 vecMax();
+	Collision GetCollision();
 	BoundingBox GetBoundingBoxData(Matrix& ViewMatrix);
 
 	int GetFlag();
@@ -56,7 +60,7 @@ public:
 	Vector2 GetSwayAngle();
 	Vector2 GetPunchAngle();
 	Vector2 GetWeaponPunchAngle();
-	BoneArray GetBoneArray();
+	CPlayerBoneArray GetBoneArray();
 	Vector3 GetBoneByID(int BoneId);
 	void EnableGlow(GlowColor color, GlowMode mode);
 	void DisableGlow();

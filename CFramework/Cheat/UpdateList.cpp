@@ -1,32 +1,17 @@
 #include "CFramework.h"
 
-const int ReadCount = 15000;
-static const char* NPC_Name = "NPC";
+const int ReadCount{ 15000 };
+static const char* NPC_Name{ "NPC" };
 
 // 0x20
-struct alignas(32) Entity {
+struct alignas(0x20) entity {
     uint64_t address;
     uint64_t junk[3];
 };
 
 struct entitylist_t {
-    Entity entity[ReadCount]{};
+    entity entity[ReadCount]{};
 };
-
-std::vector<CEntity> CFramework::GetEntityList() {
-    std::lock_guard<std::mutex> lock(ent_list_mutex);
-    return m_vecEntityList;
-}
-
-std::vector<std::string> CFramework::GetSpectatorList() {
-    std::lock_guard<std::mutex> lock(spec_list_mutex);
-    return m_vecSpectatorList;
-}
-
-std::vector<uintptr_t> CFramework::GetViewModelList() {
-    std::lock_guard<std::mutex> lock(vmodel_list_mutex);
-    return m_vecViewModelList;
-}
 
 void CFramework::UpdateList()
 {
@@ -34,21 +19,28 @@ void CFramework::UpdateList()
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(333));
 
-        CEntity local = CEntity();
-
         // Read EntityList
         auto list_addr = m.Read<uintptr_t>(m.m_dwClientBaseAddr + offset::dwEntityList);
 
         if (list_addr == NULL)
             continue;
 
-        // Gte Local
-        local.m_address = m.Read<uintptr_t>(m.m_dwClientBaseAddr + offset::dwLocalPlayer);
+        // Get Local
+        CEntity lp = CEntity();
+        uintptr_t pLocalPlayer = m.Read<uintptr_t>(m.m_dwClientBaseAddr + offset::dwLocalPlayer);
 
-        if (!local.Update())
-            continue;
+        if (pLocalPlayer != NULL)
+        {
+            lp.m_address = pLocalPlayer;
 
-        local.UpdateStatic();
+            if (!lp.Update())
+                continue;
+
+            lp.UpdateStatic();
+
+            std::lock_guard<std::mutex> llock(local_mutex);
+            local = lp;
+        }
 
         auto list = m.Read<entitylist_t>(m.m_dwClientBaseAddr + offset::dwEntityList);
         entitylist_t* pList = &list;
@@ -60,7 +52,7 @@ void CFramework::UpdateList()
         for (int i = 0; i < ReadCount; i++)
         {
             // 無効なポインタではないか、Localでははいか.
-            if (pList->entity[i].address != NULL && pList->entity[i].address != local.m_address)
+            if (pList->entity[i].address != NULL && pList->entity[i].address != lp.m_address)
             {
                 // SignifierNameを取得。エンティティの種類別にある固有の名前みたいなもの.
                 char SignifierName[32]{};

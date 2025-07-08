@@ -31,9 +31,9 @@ void CEntity::UpdateStatic()
 BoundingBox CEntity::GetBoundingBoxData(Matrix& ViewMatrix)
 {
 	BoundingBox bbOut{};
-
-	Vector3 min = vecMin();
-	Vector3 max = vecMax();
+	const Collision collision = GetCollision();
+	Vector3 min = collision.vecMin + m_vecAbsOrigin;
+	Vector3 max = collision.vecMax + m_vecAbsOrigin;
 
 	Vector2 flb, brt, blb, frt, frb, brb, blt, flt;
 
@@ -78,14 +78,9 @@ bool CEntity::IsSpectator()
 	return m.Read<int>(m_address + offset::m_iObserverMode) == 5;
 }
 
-Vector3 CEntity::vecMin()
+Collision CEntity::GetCollision()
 {
-	return m.Read<Vector3>(m_address + offset::m_Collision + 0x10) + m_vecAbsOrigin;
-}
-
-Vector3 CEntity::vecMax()
-{
-	return m.Read<Vector3>(m_address + offset::m_Collision + 0x1C) + m_vecAbsOrigin;
+	return m.Read<Collision>(m_address + offset::m_Collision + 0x10);
 }
 
 int CEntity::GetFlag()
@@ -140,9 +135,9 @@ Vector3 CEntity::GetBoneByID(int BoneId)
 	return vOut;
 }
 
-BoneArray CEntity::GetBoneArray()
+CPlayerBoneArray CEntity::GetBoneArray()
 {
-	return m.Read<BoneArray>(m_pBoneArray);
+	return m.Read<CPlayerBoneArray>(m_pBoneArray);
 }
 
 void CEntity::EnableGlow(GlowColor color, GlowMode mode)
