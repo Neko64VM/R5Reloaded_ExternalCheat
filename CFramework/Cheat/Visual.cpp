@@ -256,15 +256,17 @@ void CFramework::RenderESP()
         // AimBot
         if (g.AimBotEnable)
         {
-            // StickTarget
-            if (lastTarget.m_address != NULL && lastTarget.Update())
-            {
-                if (lastTarget.m_lastvisibletime + 0.125f >= pLocal->GetTimeBase())
+            // FOVの外の1.5倍のところにあったらスキップ
+            Vector2 distCheck{};
+            if (!WorldToScreen(ViewMatrix, g.rcSize, entity.GetBoneByID(3), distCheck))
                     continue;
-            }
 
+            if (abs((ScreenMiddle - distCheck).Length()) > g.AimFOV * 1.5)
+                continue;
+            
             auto b = pEntity->GetBoneArray();
 
+            // 近距離で動作不安定？要チェック
             for (int i = 0; i < 128; i++)
             {
                 Vector2 BoneScreen{};
@@ -272,7 +274,7 @@ void CFramework::RenderESP()
                 if (Vec3_Empty(Vector3(b.entry[i].x, b.entry[i].y, b.entry[i].z)))
                     continue;
 
-                auto bonePos = Vector3(b.entry[i].x, b.entry[i].y, b.entry[i].z) + pEntity->m_vecAbsOrigin;
+                auto bonePos = Vector3(b.entry[i].x, b.entry[i].y, b.entry[i].z) + entity.m_vecAbsOrigin;
                 if (!WorldToScreen(ViewMatrix, g.rcSize, bonePos, BoneScreen))
                     break;
 
