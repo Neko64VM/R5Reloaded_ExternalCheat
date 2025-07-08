@@ -23,7 +23,7 @@ https://github.com/ocornut/imgui
 https://github.com/nlohmann/json  
 * R5R_AimAssist_Forcer  
 https://github.com/cryotb/R5R_AimAssist_Forcer  
-* 
+
 ## 免責事項
 このプロジェクトは学習や研究・教育用としてアップロードされました。  
 これらの用途以外で使用した場合に発生した如何なる損害についても、製作者は一切の責任を負いません。
