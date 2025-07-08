@@ -93,6 +93,11 @@ bool CEntity::IsDead()
 	return m.Read<int>(m_address + offset::m_lifeState) > 0;
 }
 
+bool CEntity::IsVisible(const float& baseTime)
+{
+	return m_lastvisibletime + 0.15f >= baseTime;
+}
+
 void CEntity::SetViewAngle(const Vector2& angle)
 {
 	m.Write<Vector2>(m_address + offset::m_vecViewAngle, angle);

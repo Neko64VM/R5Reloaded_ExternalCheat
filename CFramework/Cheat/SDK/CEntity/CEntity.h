@@ -48,6 +48,7 @@ public:
 	void UpdateStatic();
 	bool IsPlayer();
 	bool IsDead();
+	bool IsVisible(const float& baseTime);
 	bool IsSpectator();
 
 	Collision GetCollision();

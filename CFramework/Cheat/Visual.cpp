@@ -2,6 +2,7 @@
 #define M_PI 3.14159265358979323846
 
 CEntity lastTarget = CEntity();
+CEntity lockedTarget = CEntity();
 auto g_gui = std::make_unique<Renderer>();
 
 bool InScreen(const BoundingBox* box)
@@ -64,10 +65,9 @@ void CFramework::RenderInfo()
 void CFramework::RenderESP()
 {
     // AimBot
-    float FOV{ 0.f };
+    CEntity target = CEntity();
     float MinFov{ FLT_MAX };
     float MinDistance{ FLT_MAX };
-    CEntity target = CEntity();
     const Vector2 ScreenMiddle{ g.rcSize.right / 2.f, g.rcSize.bottom / 2.f };
 
     // Local
@@ -76,15 +76,16 @@ void CFramework::RenderESP()
     if (!pLocal->Update())
         return;
 
-    // ViewMatrix
-    uintptr_t ViewRenderer = m.Read<uintptr_t>(m.m_dwClientBaseAddr + offset::ViewRender);
+    // ViewMatrix and more
+    const float baseTime = pLocal->GetTimeBase();
+    const uintptr_t ViewRenderer = m.Read<uintptr_t>(m.m_dwClientBaseAddr + offset::ViewRender);
     Matrix ViewMatrix = m.Read<Matrix>(m.Read<uintptr_t>(ViewRenderer + offset::ViewMatrix));
 
     // 2D Radar
-    float s_radar_scale{ 12.f };
-    Vector2 s_radar_size{ 250.f, 250.f };
-    Vector2 s_radar_pos{ 25.f, g.rcSize.bottom - (s_radar_size.y + 25.f) };
-    Vector2 s_radar_center{ s_radar_pos.x + s_radar_size.x / 2.f, s_radar_pos.y + s_radar_size.y / 2.f };
+    const float s_radar_scale{ 12.f };
+    const Vector2 s_radar_size{ 250.f, 250.f };
+    const Vector2 s_radar_pos{ 25.f, g.rcSize.bottom - (s_radar_size.y + 25.f) };
+    const Vector2 s_radar_center{ s_radar_pos.x + s_radar_size.x / 2.f, s_radar_pos.y + s_radar_size.y / 2.f };
 
     // Radar
     g_gui->Rect(Vector2(s_radar_pos), Vector2(s_radar_pos + s_radar_size), ImColor(1.f, 1.f, 1.f, 0.5f));
@@ -98,20 +99,18 @@ void CFramework::RenderESP()
 
     for (auto& entity : this->GetEntityList())
     {
-        CEntity* pEntity = &entity;
-
-        if (!pEntity->Update())
+        if (!entity.Update())
             continue;
 
         // 距離を取得
-        const float flDistance = ((pLocal->m_vecAbsOrigin - pEntity->m_vecAbsOrigin).Length() * 0.01905f);
+        const float flDistance = ((pLocal->m_vecAbsOrigin - entity.m_vecAbsOrigin).Length() * 0.01905f);
 
         // 各種チェック
         if (g.ESP_MaxDistance < flDistance)
             continue;
 
         ImColor color = g.Color_ESP_Enemy;
-        BoundingBox box = pEntity->GetBoundingBoxData(ViewMatrix);
+        BoundingBox box = entity.GetBoundingBoxData(ViewMatrix);
 
         if (InScreen(&box))
         {
@@ -121,14 +120,11 @@ void CFramework::RenderESP()
             const int Center = (box.right - box.left) / 2.f;
             const int bScale = (box.right - box.left) / 3.f;
 
-            // 対象が見えてるかチェックする。
-            bool visible = pEntity->m_lastvisibletime + 0.125f >= pLocal->GetTimeBase();
-
             // 色を決める
             ImColor shadow_color = g_gui->ApplyAlpha(g.Color_ESP_Shadow, g.m_flShadowAlpha);
-            ImColor tempColor = pLocal->m_iTeamNum == pEntity->m_iTeamNum ? g.Color_ESP_Team : visible ? g.Color_ESP_Visible : g.Color_ESP_Enemy;
+            ImColor tempColor = pLocal->m_iTeamNum == entity.m_iTeamNum ? g.Color_ESP_Team : entity.IsVisible(baseTime) ? g.Color_ESP_Visible : g.Color_ESP_Enemy;
 
-            if (pEntity->m_address == lastTarget.m_address)
+            if (entity.m_address == lastTarget.m_address)
                 tempColor = g.Color_ESP_AimTarget;
 
             color = g_gui->ApplyAlpha(tempColor, g.m_flGlobalAlpha);
@@ -137,18 +133,18 @@ void CFramework::RenderESP()
             switch (g.GlowStyle)
             {
             case 0:
-                if (m.Read<int>(pEntity->m_address + 0x310) != 0)
-                    pEntity->DisableGlow();
+                if (m.Read<int>(entity.m_address + 0x310) != 0)
+                    entity.DisableGlow();
                 break;
             case 1:
-                pEntity->EnableGlow(GlowColor{ color.Value.x, color.Value.y, color.Value.z }, GlowMode{ 101, 6, 85, 96 });
+                entity.EnableGlow(GlowColor{ color.Value.x, color.Value.y, color.Value.z }, GlowMode{ 101, 6, 85, 96 });
                 break;
             default:
                 break;
             }
 
             // TeamCheck
-            if (!g.ESP_Team && pEntity->m_iTeamNum == pLocal->m_iTeamNum)
+            if (!g.ESP_Team && entity.m_iTeamNum == pLocal->m_iTeamNum)
                 continue;
 
             // Line
@@ -165,8 +161,8 @@ void CFramework::RenderESP()
                 case 0: {
                     // Head bone
                     Vector2 pBase{}, pHead{};
-                    const Vector3 Head = pEntity->GetBoneByID(8) + Vector3(0.f, 0.f, 12.f);
-                    if (!WorldToScreen(ViewMatrix, g.rcSize, pEntity->m_vecAbsOrigin + Vector3(0.f, 0.f, -6.f), pBase) || !WorldToScreen(ViewMatrix, g.rcSize, Head, pHead))
+                    const Vector3 Head = entity.GetBoneByID(8) + Vector3(0.f, 0.f, 12.f);
+                    if (!WorldToScreen(ViewMatrix, g.rcSize, entity.m_vecAbsOrigin + Vector3(0.f, 0.f, -6.f), pBase) || !WorldToScreen(ViewMatrix, g.rcSize, Head, pHead))
                         continue;
 
                     int height = pBase.y - pHead.y;
@@ -179,7 +175,7 @@ void CFramework::RenderESP()
                 }   break;
                 case 1: {
                     // BoundingBox
-                    bbox = pEntity->GetBoundingBoxData(ViewMatrix);
+                    bbox = entity.GetBoundingBoxData(ViewMatrix);
                 }   break;
                 default:
                     break;
@@ -208,13 +204,13 @@ void CFramework::RenderESP()
             {
                 g_gui->Healthbar(Vector2(box.left - 3, box.top + 1), Vector2(box.left - 2, box.bottom - 1), entity.m_iHealth , entity.m_iMaxHealth, g.Color_ESP_Shadow, g.m_flGlobalAlpha);
 
-                if (pEntity->m_shieldHealth >= 0)
+                if (entity.m_shieldHealth >= 0)
                     g_gui->Shieldbar(Vector2(box.left - 7, box.top + 1), Vector2(box.left - 6, box.bottom - 1), entity.m_shieldHealth, entity.m_shieldHealthMax, shadow_color, g.m_flGlobalAlpha);
             }
 
             // Name
             if (g.bName)
-                g_gui->StringEx(Vector2(box.right - Center - (ImGui::CalcTextSize(pEntity->m_szName).x / 2.f), box.top - ImGui::GetFontSize()), shadow_color, g.m_flGlobalAlpha, ImGui::GetFontSize(), pEntity->m_szName);
+                g_gui->StringEx(Vector2(box.right - Center - (ImGui::CalcTextSize(entity.m_szName).x / 2.f), box.top - ImGui::GetFontSize()), shadow_color, g.m_flGlobalAlpha, ImGui::GetFontSize(), entity.m_szName);
 
             // Distance & Weapon
             std::string outStr{};
@@ -231,7 +227,7 @@ void CFramework::RenderESP()
         // 2D Radar
         //if (g.ESP_Radar)
         {
-            Vector3 delta = pEntity->m_vecAbsOrigin - pLocal->m_vecAbsOrigin;
+            Vector3 delta = entity.m_vecAbsOrigin - pLocal->m_vecAbsOrigin;
             float yaw = pLocal->GetViewAngle().y * (M_PI / 180.f); // ToRadian
             float cosYaw = cosf(yaw);
             float sinYaw = sinf(yaw);
@@ -254,62 +250,56 @@ void CFramework::RenderESP()
             continue;
 
         // AimBot
-        if (g.AimBotEnable)
+        if (g.AimBotEnable && AimBotKeyCheck(g.dwAimKey0, g.dwAimKey1, g.AimKeyMode) && InScreen(&box))
         {
-            // FOVの外の1.5倍のところにあったらスキップ
-            Vector2 distCheck{};
-            if (!WorldToScreen(ViewMatrix, g.rcSize, entity.GetBoneByID(3), distCheck))
-                    continue;
-
-            if (abs((ScreenMiddle - distCheck).Length()) > g.AimFOV * 1.5)
-                continue;
-            
-            auto b = pEntity->GetBoneArray();
-
-            // 近距離で動作不安定？要チェック
-            for (int i = 0; i < 128; i++)
+            if (entity.IsVisible(baseTime))
             {
-                Vector2 BoneScreen{};
-
-                if (Vec3_Empty(Vector3(b.entry[i].x, b.entry[i].y, b.entry[i].z)))
-                    continue;
-
-                auto bonePos = Vector3(b.entry[i].x, b.entry[i].y, b.entry[i].z) + entity.m_vecAbsOrigin;
-                if (!WorldToScreen(ViewMatrix, g.rcSize, bonePos, BoneScreen))
-                    break;
-
-                // In FOV?
-                FOV = abs((ScreenMiddle - BoneScreen).Length());
-
-                if (FOV < g.AimFOV)
+                // TargetBone
+                int boneId = 1;
+                switch (g.AimTargetBone)
                 {
-                    switch (g.AimMode)
+                case 0: boneId = 8; break;
+                case 1: boneId = 3; break;
+                case 2: boneId = 2; break;
+                default:
+                    break;
+                }
+
+                Vector2 boneCheck{};
+                if (WorldToScreen(ViewMatrix, g.rcSize, entity.GetBoneByID(boneId), boneCheck))
+                {
+                    float FOV = abs((ScreenMiddle - boneCheck).Length());
+
+                    if (FOV < g.AimFOV * 1.1f)
                     {
-                    case 0: // Crosshair
-                        if (MinFov > FOV) {
-                            if (target.m_address == NULL || MinDistance > flDistance)
-                            {
+                        switch (g.AimMode)
+                        {
+                        case 0: // Crosshair
+                            if (MinFov > FOV) {
+                                if (target.m_address == NULL || MinDistance > flDistance)
+                                {
+                                    target = entity;
+                                    MinFov = FOV;
+                                    MinDistance = flDistance;
+                                }
+                            }
+                            break;
+                        case 1: // Game Distance
+                            if (MinDistance > flDistance) {
                                 target = entity;
-                                MinFov = FOV;
                                 MinDistance = flDistance;
                             }
+                            break;
                         }
-                        break;
-                    case 1: // Game Distance
-                        if (MinDistance > flDistance) {
-                            target = entity;
-                            MinDistance = flDistance;
-                        }
+
                         break;
                     }
-
-                    break;
-                }
-                else
-                {
-                    target = CEntity();
                 }
             }
+        }
+        else
+        {
+            lastTarget = CEntity();
         }
     }
 
@@ -353,5 +343,7 @@ void CFramework::RenderESP()
             if (!Vec2_Empty(SmoothedAngle))
                 pLocal->SetViewAngle(SmoothedAngle);
         }
+
+        lastTarget = target;
     }
 }
