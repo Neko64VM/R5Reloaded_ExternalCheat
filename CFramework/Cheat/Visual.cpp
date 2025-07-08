@@ -187,7 +187,7 @@ void CFramework::RenderESP()
 
                 // BoxFilled
                 if (g.bFilled)
-                    g_gui->RectFilled(box.left, box.top, box.right, box.bottom, shadow_color, g.m_flShadowAlpha);
+                    g_gui->RectFilled(box.left, box.top, box.right, box.bottom, g_gui->ApplyAlpha(shadow_color, g.m_flShadowAlpha));
 
                 switch (g.ESP_BoxType)
                 {
@@ -203,13 +203,13 @@ void CFramework::RenderESP()
             // Skeleton - ToDo
             //if (g.bSkeleton) {}
 
-            // Healthbar
+            // Health/Shieldbar
             if (g.bHealth)
             {
-                g_gui->HealthBar(box.left - 3, box.bottom + 1, 1, -Height - 1, pEntity->m_iHealth, pEntity->m_iMaxHealth, shadow_color, g.m_flGlobalAlpha); // Health
+                g_gui->Healthbar(Vector2(box.left - 3, box.top + 1), Vector2(box.left - 2, box.bottom - 1), entity.m_iHealth , entity.m_iMaxHealth, g.Color_ESP_Shadow, g.m_flGlobalAlpha);
 
                 if (pEntity->m_shieldHealth >= 0)
-                    g_gui->ShieldBar(box.left - 6, box.bottom + 1, 1, -Height - 1, pEntity->m_shieldHealth, pEntity->m_shieldHealthMax, shadow_color, g.m_flGlobalAlpha);
+                    g_gui->Shieldbar(Vector2(box.left - 7, box.top + 1), Vector2(box.left - 6, box.bottom - 1), entity.m_shieldHealth, entity.m_shieldHealthMax, shadow_color, g.m_flGlobalAlpha);
             }
 
             // Name

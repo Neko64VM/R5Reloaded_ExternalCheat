@@ -32,11 +32,6 @@ void Renderer::Circle(const Vector2 pos, float size, ImColor color)
     ImGui::GetBackgroundDrawList()->AddCircle(ToImVec2(pos), size, color);
 }
 
-void Renderer::CircleA(const Vector2 pos, float size, ImColor color, float alpha)
-{
-    ImGui::GetBackgroundDrawList()->AddCircle(ToImVec2(pos), size, ApplyAlpha(color, alpha));
-}
-
 void Renderer::CircleFilled(const Vector2 pos, float size, ImColor color, float alpha)
 {
     ImGui::GetBackgroundDrawList()->AddCircleFilled(ToImVec2(pos), size, ApplyAlpha(color, alpha));
@@ -64,18 +59,13 @@ void Renderer::RectFilled(int x0, int y0, int x1, int y1, ImColor color)
     ImGui::GetBackgroundDrawList()->AddRectFilled(ToImVec2(Vector2(x0, y0)), ToImVec2(Vector2(x1, y1)), color);
 }
 
-void Renderer::RectFilled(int x0, int y0, int x1, int y1, ImColor color, float alpha)
+void Renderer::Healthbar(Vector2 min, Vector2 max, int value, int v_max, ImColor shadow_color, float gAlpha)
 {
-    ImGui::GetBackgroundDrawList()->AddRectFilled(ToImVec2(Vector2(x0, y0)), ToImVec2(Vector2(x1, y1)), ApplyAlpha(color, alpha));
+    ImGui::GetBackgroundDrawList()->AddRectFilled(ToImVec2(Vector2(min.x - 1, min.y - 1)), ToImVec2(Vector2(max.x + 1, max.y + 2)), shadow_color);
+    ImGui::GetBackgroundDrawList()->AddRectFilled(ToImVec2(Vector2(min.x, max.y + (((min.y - max.y) / v_max) * value))), ToImVec2(Vector2(max.x, max.y + 1)), ImColor(min(510 * (v_max - value) / 100, 255), min(510 * value / 100, 255), 25, (int)(255 * gAlpha)), gAlpha);
 }
 
-void Renderer::HealthBar(int x, int y, int w, int h, int value, int v_max, ImColor shadow, float global_alpha)
-{
-    RectFilled(x - 1, y + 1, x + w + 1, y + h - 1, shadow);
-    RectFilled(x, y, x + w, y + ((h / float(v_max)) * (float)value), ImColor(min(510 * (v_max - value) / 100, 255), min(510 * value / 100, 255), 25, (int)(255 * global_alpha)), global_alpha);
-}
-
-void Renderer::ShieldBar(int x, int y, int w, int h, int value, int v_max, ImColor shadow, float global_alpha)
+void Renderer::Shieldbar(Vector2 min, Vector2 max, int value, int v_max, ImColor shadow_color, float gAlpha)
 {
     ImColor barColor = ImColor(1.f, 1.f, 1.f, 1.f);
 
@@ -88,8 +78,8 @@ void Renderer::ShieldBar(int x, int y, int w, int h, int value, int v_max, ImCol
     default: barColor = GenerateRainbow(); break;
     }
 
-    RectFilled(x, y, x + w, y + h, shadow);
-    RectFilled(x, y, x + w, y + ((h / float(v_max)) * (float)value), barColor);
+    ImGui::GetBackgroundDrawList()->AddRectFilled(ToImVec2(Vector2(min.x - 1, min.y - 1)), ToImVec2(Vector2(max.x + 1, max.y + 2)), shadow_color);
+    ImGui::GetBackgroundDrawList()->AddRectFilled(ToImVec2(Vector2(min.x, max.y + (((min.y - max.y) / v_max) * value))), ToImVec2(Vector2(max.x, max.y + 1)), barColor, (int)(255 * gAlpha));
 }
 
 void Renderer::String(const Vector2 pos, ImColor color, float alpha, const char* text)
