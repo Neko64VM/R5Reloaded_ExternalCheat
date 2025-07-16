@@ -4,13 +4,9 @@ auto gui = std::make_unique<Renderer>();
 
 void CFramework::MiscAll()
 {
-    CEntity local = CEntity();
-    local.m_address = m.Read<uintptr_t>(m.m_dwClientBaseAddr + offset::dwLocalPlayer);
-
-    if (!local.Update())
-        return;
-
-    local.UpdateStatic();
+    // Local
+    CEntity local = GetLocal();
+    uintptr_t EntityList = m.m_dwClientBaseAddr + offset::dwEntityList;
 
     if (g.RecoilControllSystem)
     {
@@ -30,8 +26,6 @@ void CFramework::MiscAll()
     }
 
     // ViewModel Glow
-    auto viewmodel_list = GetViewModelList();
-
     GlowMode mode{ 0, 0, 0, 0 };
     ImColor rainbow = gui->GenerateRainbow(g.VMG_Rate);
 
@@ -50,13 +44,21 @@ void CFramework::MiscAll()
         break;
     }
 
-    for (auto& vmodel : viewmodel_list)
-    {
-        m.Write<int>(vmodel + 0x310, 1);
-        m.Write<int>(vmodel + 0x320, 2);
-        m.Write<GlowMode>(vmodel + 0x27C, mode);
-        m.Write<GlowColor>(vmodel + 0x1D0, GlowColor(rainbow.Value.x, rainbow.Value.y, rainbow.Value.z));
-    }
+    // ViewModel - Weapon
+    uintptr_t weaponModel = local.GetWeaponViewModel(EntityList);
+
+    m.Write<int>(weaponModel + 0x310, 1);
+    m.Write<int>(weaponModel + 0x320, 2);
+    m.Write<GlowMode>(weaponModel + 0x27C, mode);
+    m.Write<GlowColor>(weaponModel + 0x1D0, GlowColor(rainbow.Value.x, rainbow.Value.y, rainbow.Value.z));
+
+    // ViewModel - Hand
+    uintptr_t handModel = local.GetHandViewModel(EntityList);
+
+    m.Write<int>(handModel + 0x310, 1);
+    m.Write<int>(handModel + 0x320, 2);
+    m.Write<GlowMode>(handModel + 0x27C, mode);
+    m.Write<GlowColor>(handModel + 0x1D0, GlowColor(1.f, 1.f, 1.f));
 }
 
 bool CFramework::AimBotKeyCheck(DWORD& AimKey0, DWORD& AimKey1, int AimKeyMode)

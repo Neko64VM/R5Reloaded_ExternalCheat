@@ -20,7 +20,8 @@ void CFramework::UpdateList()
         std::this_thread::sleep_for(std::chrono::milliseconds(333));
 
         // Read EntityList
-        auto list_addr = m.Read<uintptr_t>(m.m_dwClientBaseAddr + offset::dwEntityList);
+        const uintptr_t EntityList = m.m_dwClientBaseAddr + offset::dwEntityList;
+        auto list_addr = m.Read<uintptr_t>(EntityList);
 
         if (list_addr == NULL)
             continue;
@@ -42,12 +43,11 @@ void CFramework::UpdateList()
             local = lp;
         }
 
-        auto list = m.Read<entitylist_t>(m.m_dwClientBaseAddr + offset::dwEntityList);
+        auto list = m.Read<entitylist_t>(EntityList);
         entitylist_t* pList = &list;
 
         std::vector<CEntity> vec_entitylist;
         std::vector<std::string> vec_spectatorlist;
-        std::vector<uintptr_t> vec_viewmodellist;
 
         for (int i = 0; i < ReadCount; i++)
         {
@@ -63,12 +63,6 @@ void CFramework::UpdateList()
                     // SignifierNameを取得.
                     m.ReadString(sig_name_addr, SignifierName, sizeof(SignifierName));
 
-                    // ViewModel
-                    if (strcmp(SignifierName, "viewmodel") == 0) {
-                        vec_viewmodellist.push_back(pList->entity[i].address);
-                        continue;
-                    }
-
                     // プレイヤー / ダミー.
                     if (strcmp(SignifierName, "player") == 0 || g.ESP_NPC && strcmp(SignifierName, "npc_dummie") == 0)
                     {
@@ -82,10 +76,15 @@ void CFramework::UpdateList()
                             strcpy_s(p.m_szName, NPC_Name);
                            
                         // 観戦中だったら
-                        if (strcmp(SignifierName, "player") == 0 && p.IsSpectator())
-                            vec_spectatorlist.push_back(p.m_szName);
-                        else if (!p.IsDead()) // 生きてたら.
+                        if (strcmp(SignifierName, "player") == 0 && p.IsSpectator()) {
+                            std::string result = p.m_szName;
+                            result += p.GetObservingTarget(EntityList).m_address == local.m_address ? "[ * ]" : "";
+                            vec_spectatorlist.push_back(result);
+                        }
+                            
+                        else if (!p.IsDead()) {
                             vec_entitylist.push_back(p);
+                        } 
                     }
                 }
             }
@@ -93,9 +92,8 @@ void CFramework::UpdateList()
 
         std::lock_guard<std::mutex> elock(ent_list_mutex);
         std::lock_guard<std::mutex> slock(spec_list_mutex);
-        std::lock_guard<std::mutex> vlock(vmodel_list_mutex);
+
         m_vecEntityList = vec_entitylist;
         m_vecSpectatorList = vec_spectatorlist;
-        m_vecViewModelList = vec_viewmodellist;
     }
 }

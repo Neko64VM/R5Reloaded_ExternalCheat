@@ -1,23 +1,20 @@
 #include "CFramework.h"
 
-// ImGui::Combo/ImGui::List等で使う文字列群
-const char* AimBoneList[] = { "Head", "Chest"};
-const char* AimKeyModeList[] = { "None Key", "and", "or" };
-const char* BoxRenderModeList[] = { "Bone", "BoundingBox" };
-const char* BoxTypeList[] = { "Simple", "Cornered" };
-const char* CrosshairList[] = { "Cross", "Circle" };
-const char* GlowStyleList[] = { "None", "Simple" };
-const char* ViewModelGlowTypeList[] = { "None", "Border Only", "Border + Filled"};
-const std::vector<const char*> MenuStringList = { "AimBot", "Visual", "Misc", "Setting" };
-const std::vector<const char*> MenuIconList = { ICON_FA_CROSSHAIRS, ICON_FA_EYE, ICON_FA_BARS, ICON_FA_GEAR };
-
 // Menu, Config
 int Index = 0;
 int BindingID = 0;
 int FileNum = 0;
 bool DeleteFlag = false;
+const char* AimBoneList[]{ "Head", "Chest"};
+const char* AimKeyModeList[]{ "None Key", "and", "or" };
+const char* BoxRenderModeList[]{ "Bone", "BoundingBox" };
+const char* BoxTypeList[]{ "Simple", "Cornered" };
+const char* CrosshairList[]{ "Cross", "Circle" };
+const char* GlowStyleList[]{ "None", "Simple" };
+const char* ViewModelGlowTypeList[]{ "None", "Border Only", "Border + Filled"};
+const std::vector<const char*> MenuStringList{ "AimBot", "Visual", "Misc", "Setting" };
+const std::vector<const char*> MenuIconList{ ICON_FA_CROSSHAIRS, ICON_FA_EYE, ICON_FA_BARS, ICON_FA_GEAR };
 
-// チートのメニュー
 void CFramework::RenderMenu()
 {
     // Setup
@@ -64,6 +61,8 @@ void CFramework::RenderMenu()
         ImGui::Spacing();
 
         ImGui::Checkbox("AimBot", &g.AimBotEnable);
+        ImGui::Checkbox("VisibilityCheck", &g.bVisCheck);
+        ImGui::Checkbox("RemoveSway", &g.bRemoveSway);
 
         ImGui::EndChild();
         ImGui::BeginChild("##C001", ImVec2(ImGui::GetContentRegionAvail()), true);
@@ -307,9 +306,11 @@ void CFramework::RenderMenu()
 
         if (g.GenerateFlag)
         {
-            ImGui::TextColored(ImColor(1.f, 0.f, 0.f, 1.f), "New config name :");
-            ImGui::SameLine();
-            ImGui::Text("%s.json", g.newConfigName.c_str());
+            ImGui::Text("New config name:");
+
+            static char ngw[64]{};
+            strcpy_s(ngw, 64, g.newConfigName.c_str());
+            ImGui::InputText(".json", ngw, IM_ARRAYSIZE(ngw));
 
             if (ImGui::Button("Generate", ImVec2(ImGui::GetContentRegionAvail().x / 2.f, 20.f)) || utils::IsKeyDown(VK_RETURN))
             {

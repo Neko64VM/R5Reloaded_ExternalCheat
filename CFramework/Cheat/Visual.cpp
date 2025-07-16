@@ -40,6 +40,7 @@ void CFramework::RenderInfo()
 
     // SpectatorList
     auto spectator_list = GetSpectatorList();
+
     if (g.SpectatorListEnable && spectator_list.size() != 0)
     {
         g_gui->String(Vector2(g.rcSize.right / 2 - (ImGui::CalcTextSize("[ Spectator Found! ]").x / 2), g.rcSize.top), TEXT_COLOR_WARNING, 1.f, "[ Spectator Found! ]");
@@ -71,15 +72,17 @@ void CFramework::RenderESP()
     const Vector2 ScreenMiddle{ g.rcSize.right / 2.f, g.rcSize.bottom / 2.f };
 
     // Local
-    CEntity* pLocal = GetLocal();
+    CEntity local = GetLocal();
 
-    if (!pLocal->Update())
+    if (!local.Update())
         return;
 
     // ViewMatrix and more
-    const float baseTime = pLocal->GetTimeBase();
+    const float baseTime = local.GetTimeBase();
     const uintptr_t ViewRenderer = m.Read<uintptr_t>(m.m_dwClientBaseAddr + offset::ViewRender);
-    Matrix ViewMatrix = m.Read<Matrix>(m.Read<uintptr_t>(ViewRenderer + offset::ViewMatrix));
+    const uintptr_t pViewMatrix = m.Read<uintptr_t>(ViewRenderer + offset::ViewMatrix);
+    Matrix ViewMatrix = m.Read<Matrix>(pViewMatrix);
+    const uintptr_t entitylist = m.m_dwClientBaseAddr + offset::dwEntityList;
 
     // 2D Radar
     const float s_radar_scale{ 12.f };
@@ -103,7 +106,7 @@ void CFramework::RenderESP()
             continue;
 
         // 距離を取得
-        const float flDistance = ((pLocal->m_vecAbsOrigin - entity.m_vecAbsOrigin).Length() * 0.01905f);
+        const float flDistance = ((local.m_vecAbsOrigin - entity.m_vecAbsOrigin).Length() * 0.01905f);
 
         // 各種チェック
         if (g.ESP_MaxDistance < flDistance)
@@ -122,7 +125,7 @@ void CFramework::RenderESP()
 
             // 色を決める
             ImColor shadow_color = g_gui->ApplyAlpha(g.Color_ESP_Shadow, g.m_flShadowAlpha);
-            ImColor tempColor = pLocal->m_iTeamNum == entity.m_iTeamNum ? g.Color_ESP_Team : entity.IsVisible(baseTime) ? g.Color_ESP_Visible : g.Color_ESP_Enemy;
+            ImColor tempColor = local.m_iTeamNum == entity.m_iTeamNum ? g.Color_ESP_Team : entity.IsVisible(baseTime) ? g.Color_ESP_Visible : g.Color_ESP_Enemy;
 
             if (entity.m_address == lastTarget.m_address)
                 tempColor = g.Color_ESP_AimTarget;
@@ -144,7 +147,7 @@ void CFramework::RenderESP()
             }
 
             // TeamCheck
-            if (!g.ESP_Team && entity.m_iTeamNum == pLocal->m_iTeamNum)
+            if (!g.ESP_Team && entity.m_iTeamNum == local.m_iTeamNum)
                 continue;
 
             // Line
@@ -197,7 +200,11 @@ void CFramework::RenderESP()
             }
 
             // Skeleton - ToDo
-            //if (g.bSkeleton) {}
+            //if (g.bSkeleton) 
+            {
+                //uintptr_t pStudioHdr = m.Read<uintptr_t>(entity.m_address + 0x10E0);
+                //uintptr_t StudioHdr = m.Read<uintptr_t>(pStudioHdr + 0x8);
+            }
 
             // Health/Shieldbar
             if (g.bHealth)
@@ -227,8 +234,8 @@ void CFramework::RenderESP()
         // 2D Radar
         //if (g.ESP_Radar)
         {
-            Vector3 delta = entity.m_vecAbsOrigin - pLocal->m_vecAbsOrigin;
-            float yaw = pLocal->GetViewAngle().y * (M_PI / 180.f); // ToRadian
+            Vector3 delta = entity.m_vecAbsOrigin - local.m_vecAbsOrigin;
+            float yaw = local.GetViewAngle().y * (M_PI / 180.f); // ToRadian
             float cosYaw = cosf(yaw);
             float sinYaw = sinf(yaw);
 
@@ -252,48 +259,48 @@ void CFramework::RenderESP()
         // AimBot
         if (g.AimBotEnable && AimBotKeyCheck(g.dwAimKey0, g.dwAimKey1, g.AimKeyMode) && InScreen(&box))
         {
-            if (entity.IsVisible(baseTime))
+            if (g.bVisCheck && !entity.IsVisible(baseTime))
+                continue;
+
+            // TargetBone
+            int boneId = 1;
+            switch (g.AimTargetBone)
             {
-                // TargetBone
-                int boneId = 1;
-                switch (g.AimTargetBone)
-                {
-                case 0: boneId = 8; break;
-                case 1: boneId = 3; break;
-                case 2: boneId = 2; break;
-                default:
-                    break;
-                }
+            case 0: boneId = 8; break;
+            case 1: boneId = 3; break;
+            case 2: boneId = 2; break;
+            default:
+                break;
+            }
 
-                Vector2 boneCheck{};
-                if (WorldToScreen(ViewMatrix, g.rcSize, entity.GetBoneByID(boneId), boneCheck))
-                {
-                    float FOV = abs((ScreenMiddle - boneCheck).Length());
+            Vector2 boneCheck{};
+            if (WorldToScreen(ViewMatrix, g.rcSize, entity.GetBoneByID(boneId), boneCheck))
+            {
+                float FOV = abs((ScreenMiddle - boneCheck).Length());
 
-                    if (FOV < g.AimFOV * 1.1f)
+                if (FOV < g.AimFOV * 1.1f)
+                {
+                    switch (g.AimMode)
                     {
-                        switch (g.AimMode)
-                        {
-                        case 0: // Crosshair
-                            if (MinFov > FOV) {
-                                if (target.m_address == NULL || MinDistance > flDistance)
-                                {
-                                    target = entity;
-                                    MinFov = FOV;
-                                    MinDistance = flDistance;
-                                }
-                            }
-                            break;
-                        case 1: // Game Distance
-                            if (MinDistance > flDistance) {
+                    case 0: // Crosshair
+                        if (MinFov > FOV) {
+                            if (target.m_address == NULL || MinDistance > flDistance)
+                            {
                                 target = entity;
+                                MinFov = FOV;
                                 MinDistance = flDistance;
                             }
-                            break;
                         }
-
+                        break;
+                    case 1: // Game Distance
+                        if (MinDistance > flDistance) {
+                            target = entity;
+                            MinDistance = flDistance;
+                        }
                         break;
                     }
+
+                    break;
                 }
             }
         }
@@ -304,7 +311,7 @@ void CFramework::RenderESP()
     }
 
     // AimBot - ToDo
-    if (target.m_address != NULL && AimBotKeyCheck(g.dwAimKey0, g.dwAimKey1, g.AimKeyMode))
+    if (target.m_address != NULL && AimBotKeyCheck(g.dwAimKey0, g.dwAimKey1, g.AimKeyMode) && !m.Read<bool>(m.m_dwClientBaseAddr + offset::bIsMenuOpened))
     {
         if (g.hGameWindow == GetForegroundWindow())
         {
@@ -320,28 +327,44 @@ void CFramework::RenderESP()
 
             // Simple prediction
             auto targetPos = target.GetBoneByID(boneId);
-            const float distance = ((pLocal->m_vecAbsOrigin - targetPos).Length() * 0.01905f);
-            float bulletTime = distance / 750.f;
-            targetPos.x += target.m_vecAbsVelocity.x * bulletTime;
-            targetPos.y += target.m_vecAbsVelocity.y * bulletTime;
-            targetPos.z += (150.f * 0.5f * (bulletTime * bulletTime));
+            const float distance = ((local.m_vecAbsOrigin - targetPos).Length() * 0.01905f);
 
-            Vector2 Angle = CalcAngle(pLocal->camera_origin, targetPos);
-            Vector2 ViewAngle = pLocal->GetViewAngle();
+            uintptr_t latestWeapon = local.GetCurrentWeapon(entitylist);
+            
+            float speed = m.Read<float>(latestWeapon + 0x1CB8);
+            float gravity = m.Read<float>(latestWeapon + 0x1650);
+
+            Vector3 predict{ 0, 0, 0 };
+
+            if (speed > 1.f)
+            {
+                float bulletTime = distance / speed;
+                predict.x = target.m_vecAbsVelocity.x * bulletTime;
+                predict.y = target.m_vecAbsVelocity.y * bulletTime;
+                predict.z = (700.f *  gravity * 0.5f) * (bulletTime * bulletTime);
+            }
+
+            targetPos += predict;
+
+            Vector2 Angle = CalcAngle(local.camera_origin, targetPos);
+            Vector2 ViewAngle = local.GetViewAngle();
             Vector2 Delta{};
 
             // NoSway
-            Vector2 Breath = pLocal->GetSwayAngle() - ViewAngle;
+            if (g.bRemoveSway)
+            {
+                Vector2 Breath = local.GetSwayAngle() - ViewAngle;
 
-            if (Breath.x != 0.f || Breath.y != 0.f)
-                Delta = (Angle - ViewAngle) - Breath;
-
+                if (Breath.x != 0.f || Breath.y != 0.f)
+                    Delta = (Angle - ViewAngle) - Breath;
+            }
+   
             NormalizeAngles(Delta);
             Vector2 SmoothedAngle = ViewAngle + (Delta / g.AimSmooth);
             NormalizeAngles(SmoothedAngle);
 
             if (!Vec2_Empty(SmoothedAngle))
-                pLocal->SetViewAngle(SmoothedAngle);
+                local.SetViewAngle(SmoothedAngle);
         }
 
         lastTarget = target;

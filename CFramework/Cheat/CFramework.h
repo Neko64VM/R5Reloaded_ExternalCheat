@@ -23,6 +23,10 @@ public:
 	void RenderMenu();
     void RenderESP();
 private:
+    ImColor TEXT_COLOR_DEFAULT{ 1.f, 1.f, 1.f, 1.f };
+    ImColor TEXT_COLOR_ATTENTION{ 1.f, 1.f, 0.f, 1.f };
+    ImColor TEXT_COLOR_WARNING{ 1.f, 0.f, 0.f, 1.f };
+
     // Thread safe.
     std::mutex local_mutex;
     std::mutex ent_list_mutex;
@@ -32,7 +36,6 @@ private:
     CEntity local{};
     std::vector<CEntity> m_vecEntityList{};
     std::vector<std::string> m_vecSpectatorList{};
-    std::vector<uintptr_t> m_vecViewModelList{};
 
     std::vector<CEntity> GetEntityList() {
         std::lock_guard<std::mutex> lock(ent_list_mutex);
@@ -44,19 +47,10 @@ private:
         return m_vecSpectatorList;
     }
 
-    std::vector<uintptr_t> GetViewModelList() {
-        std::lock_guard<std::mutex> lock(vmodel_list_mutex);
-        return m_vecViewModelList;
-    }
-
-    CEntity* GetLocal() {
+    CEntity GetLocal() {
         std::lock_guard<std::mutex> lock(local_mutex);
-        return &local;
+        return local;
     }
-
-    ImColor TEXT_COLOR_DEFAULT{ 1.f, 1.f, 1.f, 1.f };
-    ImColor TEXT_COLOR_ATTENTION{ 1.f, 1.f, 0.f, 1.f };
-    ImColor TEXT_COLOR_WARNING{ 1.f, 0.f, 0.f, 1.f };
 
     // AimBot KeyChecker
     bool AimBotKeyCheck(DWORD& AimKey0, DWORD& AimKey1, int AimKeyMode);
