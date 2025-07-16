@@ -10,6 +10,8 @@ namespace offset
 	constexpr auto ViewMatrix = 0x1A93D0;
 	constexpr auto TimeScale = 0x1843340; // base + this (float)
 
+	constexpr auto bIsMenuOpened = 0x27D7D80; // bool
+
 	// https://github.com/cryotb/R5R_AimAssist_Forcer
 	constexpr auto AimAssistVal = 0x1718B00;
 
@@ -25,7 +27,7 @@ namespace offset
 	constexpr auto m_shieldHealthMax = 0x174;
 	constexpr auto m_iHealth = 0x3E0;
 	constexpr auto m_iTeamNum = 0x3F0;
-	// constexpr auto m_hOwnerEntity		= 0x43c;
+	constexpr auto m_hOwnerEntity = 0x43c;
 	constexpr auto m_Collision = 0x458;
 	constexpr auto m_iMaxHealth = 0x510;
 	constexpr auto m_iSignifierName = 0x518;
@@ -37,9 +39,11 @@ namespace offset
 	constexpr auto m_vecPunchAngle = 0x20bc;
 	constexpr auto m_vecSwayAngle = 0x2178;
 	constexpr auto m_vecViewAngle = 0x2188;
+	constexpr auto m_hViewModels = 0x2848;
 	constexpr auto m_iObserverMode = 0x2fcc;
 	constexpr auto m_hObserverTarget = 0x2fd0;
 	constexpr auto m_szName = 0x3BF8;
+	constexpr auto m_flFov = 0x405C; // Default: 1.f
 };
 
 struct Bone
