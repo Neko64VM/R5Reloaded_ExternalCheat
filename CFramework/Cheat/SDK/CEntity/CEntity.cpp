@@ -28,6 +28,23 @@ void CEntity::UpdateStatic()
 	m.ReadString(NameAddress, m_szName, sizeof(m_szName));
 }
 
+void CEntity::GetName()
+{
+	uintptr_t NameAddress = m.Read<uintptr_t>(m_address + offset::m_szName);
+	m.ReadString(NameAddress, m_szName, sizeof(m_szName));
+}
+
+CEntity CEntity::GetObservingTarget(const uintptr_t& entitylist)
+{
+	CEntity result{};
+
+	uint32_t Index = m.Read<uint32_t>(m_address + offset::m_hObserverTarget) & 0xFFFF;
+	result.m_address = m.Read<uintptr_t>(entitylist + ((Index - 1) * 0x20));
+
+
+	return result;
+}
+
 BoundingBox CEntity::GetBoundingBoxData(Matrix& ViewMatrix)
 {
 	BoundingBox bbOut{};
@@ -76,6 +93,27 @@ bool CEntity::IsPlayer()
 bool CEntity::IsSpectator()
 {
 	return m.Read<int>(m_address + offset::m_iObserverMode) == 5;
+}
+
+uintptr_t CEntity::GetCurrentWeapon(const uintptr_t& entitylist)
+{
+	uint32_t Index = m.Read<uint32_t>(m_address + 0x1704) & 0xFFFF;
+
+	return m.Read<uintptr_t>(entitylist + ((Index - 1) * 0x20));
+}
+
+uintptr_t CEntity::GetHandViewModel(const uintptr_t& entitylist)
+{
+	uint32_t handIndex = m.Read<uint32_t>(m_address + 0x2848 + 0xC) & 0xFFFF;
+	
+	return m.Read<uintptr_t>(entitylist + ((handIndex - 1) * 0x20));
+}
+
+uintptr_t CEntity::GetWeaponViewModel(const uintptr_t& entitylist)
+{
+	uint32_t weaponIndex = m.Read<uint32_t>(m_address + offset::m_hViewModels) & 0xFFFF;
+
+	return m.Read<uintptr_t>(entitylist + ((weaponIndex - 1) * 0x20));
 }
 
 Collision CEntity::GetCollision()

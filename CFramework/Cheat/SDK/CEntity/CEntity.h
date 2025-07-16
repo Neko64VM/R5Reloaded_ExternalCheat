@@ -11,11 +11,11 @@ struct alignas(0x20) Collision {
 };
 
 struct CBone {
-	char* junk0[0xCC]{};
+	char* padding0[0xCC]{};
 	float x{};
-	char* junk1[0xC]{};
+	char* padding1[0xC]{};
 	float y{};
-	char* junk2[0xC]{};
+	char* padding2[0xC]{};
 	float z{};
 };
 
@@ -26,22 +26,22 @@ struct CPlayerBoneArray {
 class CEntity
 {
 public:
-	uintptr_t m_address;
+	uintptr_t m_address{ 0 };
 
 	// Player
-	Vector3 m_vecAbsVelocity;
-	Vector3 m_vecAbsOrigin;
-	int m_shieldHealth;
-	int m_shieldHealthMax;
-	int m_iHealth;
-	int m_iTeamNum;
-	int m_iMaxHealth;
-	int m_lifeState;
-	float m_lastvisibletime;
-	Vector3 camera_origin;
+	Vector3 m_vecAbsVelocity{};
+	Vector3 m_vecAbsOrigin{};
+	int m_shieldHealth{ 0 };
+	int m_shieldHealthMax{ 0 };
+	int m_iHealth{ 0 };
+	int m_iTeamNum{ 0 };
+	int m_iMaxHealth{ 0 };
+	int m_lifeState{ 0 };
+	float m_lastvisibletime{ 0.f };
+	Vector3 camera_origin{};
 	char m_szName[32]{};
 	std::string m_iSignifierName;
-	uintptr_t m_pBoneArray;
+	uintptr_t m_pBoneArray{ 0 };
 
 	// Functions
 	bool Update();
@@ -54,8 +54,14 @@ public:
 	Collision GetCollision();
 	BoundingBox GetBoundingBoxData(Matrix& ViewMatrix);
 
+	CEntity GetObservingTarget(const uintptr_t& entitylist);
+	uintptr_t GetCurrentWeapon(const uintptr_t& entitylist);
+	uintptr_t GetHandViewModel(const uintptr_t& entitylist);
+	uintptr_t GetWeaponViewModel(const uintptr_t& entitylist);
+
 	int GetFlag();
 	float GetTimeBase();
+	void GetName();
 	void SetViewAngle(const Vector2& angle);
 	Vector2 GetViewAngle();
 	Vector2 GetSwayAngle();
