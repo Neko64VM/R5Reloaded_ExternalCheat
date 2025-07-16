@@ -10,7 +10,7 @@
 #include "../Framework.h"
 using json = nlohmann::json;
 
-// Global vars
+// GlobalVars
 struct GlobalVars
 {
     // System
@@ -31,15 +31,17 @@ struct GlobalVars
     DWORD dwAimKey1{ VK_LBUTTON };
 
     // AimBot
-    bool AimBotEnable{ false };
+    bool AimBotEnable{ true };
+    bool bVisCheck{ true };
+    bool bRemoveSway{ true };
     bool bShowFOV{ true };
     bool bRainbowFOV{ false };
-    int AimFOV{ 40 };
-    float AimSmooth{ 12.5f };
+    int AimFOV{ 150 };
+    float AimSmooth{ 2.5f };
     int AimMode{ 0 };
     int AimKeyMode{ 2 }; // None, and, or
     int AimTargetBone{ 1 };
-    int AimMaxDistance{ 25 };
+    int AimMaxDistance{ 100 };
 
     // Visual
     bool VisualEnable{ true };
