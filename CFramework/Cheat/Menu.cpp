@@ -106,15 +106,8 @@ void CFramework::RenderMenu()
         ImGui::Checkbox("HealthBar", &g.bHealth);
         ImGui::Checkbox("Name", &g.bName);
         ImGui::Checkbox("Distance", &g.bDistance);
-        //ImGui::Checkbox("Weapon", &g.bWeapon);
+        ImGui::Checkbox("Weapon", &g.bWeapon);
 
-        ImGui::Spacing();
-        ImGui::Spacing();
-
-        ImGui::Combo("GlowMode", &g.GlowStyle, GlowStyleList, IM_ARRAYSIZE(GlowStyleList));
-        ImGui::Combo("BoxMode", &g.ESP_BoxRenderMode, BoxRenderModeList, IM_ARRAYSIZE(BoxRenderModeList));
-        ImGui::Combo("BoxType", &g.ESP_BoxType, BoxTypeList, IM_ARRAYSIZE(BoxTypeList));
-        
         ImGui::EndChild();
         break;
     case 2: { // misc
@@ -126,6 +119,7 @@ void CFramework::RenderMenu()
 
         //ImGui::Checkbox("BunnyHop", &g.g_bHop);
         ImGui::Checkbox("RCS", &g.RecoilControllSystem);
+        ImGui::Checkbox("SKinChanger", &g.bSkinChanger);
 
         ImGui::EndChild();
         ImGui::BeginChild("##C021", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.75f), true);
@@ -138,6 +132,17 @@ void CFramework::RenderMenu()
 
         if (ImGui::Button("Apply", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
             m.Write<float>(m.m_dwClientBaseAddr + offset::AimAssistVal, g.AimAssistMod);
+
+        ImGui::EndChild();
+        ImGui::BeginChild("##C022", ImVec2(ImGui::GetContentRegionAvail()), true);
+
+        ImGui::Text("Skin Changer");
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::Checkbox("SKinChanger", &g.bSkinChanger);
+        ImGui::CustomSliderInt("Body ID", "##bSkinID", &m_bodySKinId, 0, 15);
+        ImGui::CustomSliderInt("Weapon ID", "##wSkinID", &m_weaponSKinId, 0, 10);
 
         ImGui::EndChild();
     } break;
@@ -167,6 +172,7 @@ void CFramework::RenderMenu()
         ImGui::Combo("Type##C", &g.CrosshairType, CrosshairList, IM_ARRAYSIZE(CrosshairList));
 
         ImGui::EndChild();
+       
         break;
     default:
         break;
@@ -230,11 +236,15 @@ void CFramework::RenderMenu()
         ImGui::EndChild();
         break;
     case 1: // visual
-        ImGui::BeginChild("##C110", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 3.75f), true);
+        ImGui::BeginChild("##C110", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.75f), true);
 
         ImGui::Text("ESP Setting");
         ImGui::Separator();
         ImGui::Spacing();
+
+        ImGui::Combo("GlowMode", &g.GlowStyle, GlowStyleList, IM_ARRAYSIZE(GlowStyleList));
+        ImGui::Combo("BoxMode", &g.ESP_BoxRenderMode, BoxRenderModeList, IM_ARRAYSIZE(BoxRenderModeList));
+        ImGui::Combo("BoxType", &g.ESP_BoxType, BoxTypeList, IM_ARRAYSIZE(BoxTypeList));
 
         ImGui::CustomSliderInt("Distance", "##Distance", &g.ESP_MaxDistance, 10, 2000);
 

@@ -32,6 +32,7 @@ namespace offset
 	constexpr auto m_iMaxHealth = 0x510;
 	constexpr auto m_iSignifierName = 0x518;
 	constexpr auto m_lifeState = 0x730;
+	constexpr auto m_nSkin = 0x0e48;
 	constexpr auto camera_origin = 0x1b68;
 	constexpr auto m_lastvisibletime = 0x1754;
 	constexpr auto m_vecPunchBase_Angle = 0x20a4;

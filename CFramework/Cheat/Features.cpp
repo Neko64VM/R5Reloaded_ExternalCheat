@@ -6,8 +6,9 @@ void CFramework::MiscAll()
 {
     // Local
     CEntity local = GetLocal();
-    uintptr_t EntityList = m.m_dwClientBaseAddr + offset::dwEntityList;
+    uintptr_t entitylist = m.m_dwClientBaseAddr + offset::dwEntityList;
 
+    // RCS
     if (g.RecoilControllSystem)
     {
         static Vector2 OldPunch{};
@@ -25,7 +26,13 @@ void CFramework::MiscAll()
         }
     }
 
-    // ViewModel Glow
+    // SkinChanger
+    if (g.bSkinChanger)
+    {
+        m.Write<int>(local.m_address + offset::m_nSkin, m_bodySKinId);
+        m.Write<int>(local.GetCurrentWeapon(entitylist) + offset::m_nSkin, m_weaponSKinId);
+    }
+
     GlowMode mode{ 0, 0, 0, 0 };
     ImColor rainbow = gui->GenerateRainbow(g.VMG_Rate);
 
@@ -45,7 +52,7 @@ void CFramework::MiscAll()
     }
 
     // ViewModel - Weapon
-    uintptr_t weaponModel = local.GetWeaponViewModel(EntityList);
+    uintptr_t weaponModel = local.GetWeaponViewModel(entitylist);
 
     m.Write<int>(weaponModel + 0x310, 1);
     m.Write<int>(weaponModel + 0x320, 2);
@@ -53,7 +60,7 @@ void CFramework::MiscAll()
     m.Write<GlowColor>(weaponModel + 0x1D0, GlowColor(rainbow.Value.x, rainbow.Value.y, rainbow.Value.z));
 
     // ViewModel - Hand
-    uintptr_t handModel = local.GetHandViewModel(EntityList);
+    uintptr_t handModel = local.GetHandViewModel(entitylist);
 
     m.Write<int>(handModel + 0x310, 1);
     m.Write<int>(handModel + 0x320, 2);

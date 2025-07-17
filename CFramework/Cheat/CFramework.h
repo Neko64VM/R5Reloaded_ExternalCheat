@@ -52,6 +52,9 @@ private:
         return local;
     }
 
+    int m_bodySKinId{ -1 };
+    int m_weaponSKinId{ -1 };
+
     // AimBot KeyChecker
     bool AimBotKeyCheck(DWORD& AimKey0, DWORD& AimKey1, int AimKeyMode);
 };
