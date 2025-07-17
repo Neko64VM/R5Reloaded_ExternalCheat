@@ -100,7 +100,7 @@ void CFramework::RenderESP()
     for (int r = 1; 3 > r; r++)
         g_gui->Circle(s_radar_center, 50.f * r, ImColor(1.f, 1.f, 1.f, 0.5f));
 
-    for (auto& entity : this->GetEntityList())
+    for (auto& entity : GetEntityList())
     {
         if (!entity.Update())
             continue;
@@ -220,15 +220,23 @@ void CFramework::RenderESP()
                 g_gui->StringEx(Vector2(box.right - Center - (ImGui::CalcTextSize(entity.m_szName).x / 2.f), box.top - ImGui::GetFontSize()), shadow_color, g.m_flGlobalAlpha, ImGui::GetFontSize(), entity.m_szName);
 
             // Distance & Weapon
-            std::string outStr{};
+            std::string szResult{};
 
+            // Weapon
+            if (g.bWeapon) {
+                char szWeapon[64]{};
+                uintptr_t pWeaponName = m.Read<uintptr_t>(entity.GetCurrentWeapon(entitylist) + 0x1870);
+                m.ReadString(pWeaponName, szWeapon, 64);
+                szResult += szWeapon;
+            }
+            
             // Distance
             if (g.bDistance)
-                outStr += "[ " + std::to_string((int)flDistance) + "m ]";
+                szResult += " [ " + std::to_string((int)flDistance) + "m ]";
 
             // Rendering
-            if (g.bDistance || g.bWeapon && outStr.size() > 0)
-                g_gui->StringEx(Vector2(box.right - Center - (ImGui::CalcTextSize(outStr.c_str()).x / 2.f), box.bottom + 1), shadow_color, g.m_flGlobalAlpha, ImGui::GetFontSize(), outStr.c_str());
+            if (g.bDistance || g.bWeapon && szResult.size() > 0)
+                g_gui->StringEx(Vector2(box.right - Center - (ImGui::CalcTextSize(szResult.c_str()).x / 2.f), box.bottom + 1), shadow_color, g.m_flGlobalAlpha, ImGui::GetFontSize(), szResult.c_str());
         }
 
         // 2D Radar
@@ -313,59 +321,56 @@ void CFramework::RenderESP()
     // AimBot - ToDo
     if (target.m_address != NULL && AimBotKeyCheck(g.dwAimKey0, g.dwAimKey1, g.AimKeyMode) && !m.Read<bool>(m.m_dwClientBaseAddr + offset::bIsMenuOpened))
     {
-        if (g.hGameWindow == GetForegroundWindow())
+        int boneId = 1;
+        switch (g.AimTargetBone)
         {
-            int boneId = 1;
-            switch (g.AimTargetBone)
-            {
-            case 0: boneId = 8; break;
-            case 1: boneId = 3; break;
-            case 2: boneId = 2; break;
-            default:
-                break;
-            }
-
-            // Simple prediction
-            auto targetPos = target.GetBoneByID(boneId);
-            const float distance = ((local.m_vecAbsOrigin - targetPos).Length() * 0.01905f);
-
-            uintptr_t latestWeapon = local.GetCurrentWeapon(entitylist);
-            
-            float speed = m.Read<float>(latestWeapon + 0x1CB8);
-            float gravity = m.Read<float>(latestWeapon + 0x1650);
-
-            Vector3 predict{ 0, 0, 0 };
-
-            if (speed > 1.f)
-            {
-                float bulletTime = distance / speed;
-                predict.x = target.m_vecAbsVelocity.x * bulletTime;
-                predict.y = target.m_vecAbsVelocity.y * bulletTime;
-                predict.z = (700.f *  gravity * 0.5f) * (bulletTime * bulletTime);
-            }
-
-            targetPos += predict;
-
-            Vector2 Angle = CalcAngle(local.camera_origin, targetPos);
-            Vector2 ViewAngle = local.GetViewAngle();
-            Vector2 Delta{};
-
-            // NoSway
-            if (g.bRemoveSway)
-            {
-                Vector2 Breath = local.GetSwayAngle() - ViewAngle;
-
-                if (Breath.x != 0.f || Breath.y != 0.f)
-                    Delta = (Angle - ViewAngle) - Breath;
-            }
-   
-            NormalizeAngles(Delta);
-            Vector2 SmoothedAngle = ViewAngle + (Delta / g.AimSmooth);
-            NormalizeAngles(SmoothedAngle);
-
-            if (!Vec2_Empty(SmoothedAngle))
-                local.SetViewAngle(SmoothedAngle);
+        case 0: boneId = 8; break;
+        case 1: boneId = 3; break;
+        case 2: boneId = 2; break;
+        default:
+            break;
         }
+
+        // Simple prediction
+        Vector3 targetPos = target.GetBoneByID(boneId);
+        const float distance = ((local.m_vecAbsOrigin - targetPos).Length() * 0.01905f);
+
+        uintptr_t latestWeapon = local.GetCurrentWeapon(entitylist);
+
+        float speed = m.Read<float>(latestWeapon + 0x1CB8);
+        float gravity = m.Read<float>(latestWeapon + 0x1650);
+
+        Vector3 predict{ 0, 0, 0 };
+
+        if (speed > 1.f)
+        {
+            float bulletTime = distance / speed;
+            predict.x = target.m_vecAbsVelocity.x * bulletTime;
+            predict.y = target.m_vecAbsVelocity.y * bulletTime;
+            predict.z = (750.f * gravity * 0.5f) * (bulletTime * bulletTime);
+        }
+
+        targetPos += predict;
+
+        Vector2 Angle = CalcAngle(local.camera_origin, targetPos);
+        Vector2 ViewAngle = local.GetViewAngle();
+        Vector2 Delta{};
+
+        // NoSway
+        if (g.bRemoveSway)
+        {
+            Vector2 Breath = local.GetSwayAngle() - ViewAngle;
+
+            if (Breath.x != 0.f || Breath.y != 0.f)
+                Delta = (Angle - ViewAngle) - Breath;
+        }
+
+        NormalizeAngles(Delta);
+        Vector2 SmoothedAngle = ViewAngle + (Delta / g.AimSmooth);
+        NormalizeAngles(SmoothedAngle);
+
+        if (!Vec2_Empty(SmoothedAngle))
+            local.SetViewAngle(SmoothedAngle);
 
         lastTarget = target;
     }

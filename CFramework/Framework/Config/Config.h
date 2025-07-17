@@ -71,6 +71,7 @@ struct GlobalVars
     float RCS_Scale{ 1.f };
     float VMG_Rate{ 5.f };
     int VMG_Type{ 0 };
+    bool bSkinChanger{ false };
 
     // Colors
     float m_flGlobalAlpha{ 0.925f };
