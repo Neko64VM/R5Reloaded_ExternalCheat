@@ -1,26 +1,34 @@
 #include "CFramework.h"
 
-auto gui = std::make_unique<Renderer>();
+auto gui = std::make_unique<CRenderer>();
 
-void CFramework::MiscAll()
+void CFramework::SpectatorCrash()
 {
-    // Local
-    CEntity local = GetLocal();
-    uintptr_t entitylist = m.m_dwClientBaseAddr + offset::dwEntityList;
+    m.Write<float>(m_CLocalCopy.m_address + (offset::m_vecPunchAngle + sizeof(Vector2)), 999);
+}
+
+void CFramework::MultiFeatures()
+{
+    // LocalÇéÊìæ
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        m_CLocalCopy = m_CLocal; // ÉRÉsÅ[
+    }
+
+    const uintptr_t entitylist = m.m_dwClientBaseAddr + offset::dwEntityList;
 
     // RCS
     if (g.RecoilControllSystem)
     {
         static Vector2 OldPunch{};
-
-        Vector2 PunchAngle = local.GetWeaponPunchAngle();
+        Vector2 PunchAngle = m_CLocalCopy.GetWeaponPunchAngle();
 
         if (!Vec2_Empty(PunchAngle)) {
-            Vector2 Delta = local.GetViewAngle() + ((OldPunch - PunchAngle) * g.RCS_Scale);
+            Vector2 Delta = m_CLocalCopy.GetViewAngle() + ((OldPunch - PunchAngle) * g.RCS_Scale);
             NormalizeAngles(Delta);
 
             if (!Vec2_Empty(Delta))
-                local.SetViewAngle(Delta);
+                m_CLocalCopy.SetViewAngle(Delta);
 
             OldPunch = PunchAngle;
         }
@@ -29,43 +37,43 @@ void CFramework::MiscAll()
     // SkinChanger
     if (g.bSkinChanger)
     {
-        m.Write<int>(local.m_address + offset::m_nSkin, m_bodySKinId);
-        m.Write<int>(local.GetCurrentWeapon(entitylist) + offset::m_nSkin, m_weaponSKinId);
+        m.Write<int>(m_CLocalCopy.m_address + offset::m_nSkin, m_bodySKinId);
+        m.Write<int>(m_CLocalCopy.GetCurrentWeapon(entitylist) + offset::m_nSkin, m_weaponSKinId);
     }
 
-    GlowMode mode{ 0, 0, 0, 0 };
-    ImColor rainbow = gui->GenerateRainbow(g.VMG_Rate);
+    GlowMode GMode{ 0, 0, 0, 0 };
+    ImColor ColRainbow = gui->GenerateRainbow(g.VMG_Rate);
 
     switch (g.VMG_Type)
     {
     case 0:
-        mode = GlowMode(0, 0, 60, 90);
+        GMode = GlowMode(0, 0, 60, 90);
         break;
     case 1:
-        mode = GlowMode(0, 6, 90, 0);
+        GMode = GlowMode(0, 6, 90, 0);
         break;
     case 2:
-        mode = GlowMode(12, 6, 90, 0);
+        GMode = GlowMode(12, 6, 90, 0);
         break;
     default:
         break;
     }
 
     // ViewModel - Weapon
-    uintptr_t weaponModel = local.GetWeaponViewModel(entitylist);
+    uintptr_t pWeaponModel = m_CLocalCopy.GetWeaponViewModel(entitylist);
 
-    m.Write<int>(weaponModel + 0x310, 1);
-    m.Write<int>(weaponModel + 0x320, 2);
-    m.Write<GlowMode>(weaponModel + 0x27C, mode);
-    m.Write<GlowColor>(weaponModel + 0x1D0, GlowColor(rainbow.Value.x, rainbow.Value.y, rainbow.Value.z));
+    m.Write<int>(pWeaponModel + 0x310, 1);
+    m.Write<int>(pWeaponModel + 0x320, 2);
+    m.Write<GlowMode>(pWeaponModel + 0x27C, GMode);
+    m.Write<GlowColor>(pWeaponModel + 0x1D0, GlowColor(ColRainbow.Value.x, ColRainbow.Value.y, ColRainbow.Value.z));
 
     // ViewModel - Hand
-    uintptr_t handModel = local.GetHandViewModel(entitylist);
+    uintptr_t pHandModel = m_CLocalCopy.GetHandViewModel(entitylist);
 
-    m.Write<int>(handModel + 0x310, 1);
-    m.Write<int>(handModel + 0x320, 2);
-    m.Write<GlowMode>(handModel + 0x27C, mode);
-    m.Write<GlowColor>(handModel + 0x1D0, GlowColor(1.f, 1.f, 1.f));
+    m.Write<int>(pHandModel + 0x310, 1);
+    m.Write<int>(pHandModel + 0x320, 2);
+    m.Write<GlowMode>(pHandModel + 0x27C, GMode);
+    m.Write<GlowColor>(pHandModel + 0x1D0, GlowColor(1.f, 1.f, 1.f));
 }
 
 bool CFramework::AimBotKeyCheck(DWORD& AimKey0, DWORD& AimKey1, int AimKeyMode)

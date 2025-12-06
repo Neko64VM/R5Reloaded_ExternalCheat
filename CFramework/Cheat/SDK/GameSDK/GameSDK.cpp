@@ -40,7 +40,7 @@ Vector2 CalcAngle(const Vector3& src, const Vector3& dst)
     return angle;
 }
 
-bool WorldToScreen(Matrix ViewMatrix, RECT Size, Vector3 vIn, Vector2& vOut)
+bool WorldToScreen(Matrix ViewMatrix, const Vector2& game_size, Vector3 vIn, Vector2& vOut)
 {
     float w = ViewMatrix.m[3][0] * vIn.x + ViewMatrix.m[3][1] * vIn.y + ViewMatrix.m[3][2] * vIn.z + ViewMatrix.m[3][3];
 
@@ -55,11 +55,11 @@ bool WorldToScreen(Matrix ViewMatrix, RECT Size, Vector3 vIn, Vector2& vOut)
     vOut.x *= invw;
     vOut.y *= invw;
 
-    float x = Size.right / 2;
-    float y = Size.bottom / 2;
+    float x = game_size.x / 2;
+    float y = game_size.y / 2;
 
-    x += 0.5 * vOut.x * Size.right + 0.5;
-    y -= 0.5 * vOut.y * Size.bottom + 0.5;
+    x += 0.5 * vOut.x * game_size.x + 0.5;
+    y -= 0.5 * vOut.y * game_size.y + 0.5;
 
     vOut.x = x;
     vOut.y = y;

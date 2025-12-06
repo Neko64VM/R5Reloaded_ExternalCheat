@@ -30,7 +30,7 @@ void CFramework::RenderMenu()
 
     ImGui::SetCursorPosY(25.f);
 
-    ImGui::PushFont(icon);
+    ImGui::PushFont(m_Icon);
 
     for (int i = 0; i < MenuIconList.size(); i++) {
         if (ImGui::CustomButton(MenuIconList[i], MenuStringList[i], ImVec2(ImGui::GetContentRegionAvail().x, 35.f), Index == i ? true : false))
@@ -73,7 +73,7 @@ void CFramework::RenderMenu()
         
         ImGui::CustomSliderInt("Aim FOV", "##a_fov", &g.AimFOV, 30, 150);
         ImGui::CustomSliderFloat("Smooth", "##a_smt", &g.AimSmooth, 1.f, 30.f);
-        ImGui::CustomSliderInt("MaxDistance", "##a_dist", &g.AimMaxDistance, 15, 150);
+        ImGui::CustomSliderInt("MaxDistance", "##a_dist", &g.AimMaxDistance, 15, 500);
 
         ImGui::Spacing();
         ImGui::Spacing();

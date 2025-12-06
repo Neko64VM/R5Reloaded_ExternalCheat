@@ -15,9 +15,6 @@ namespace offset
 	// https://github.com/cryotb/R5R_AimAssist_Forcer
 	constexpr auto AimAssistVal = 0x1718B00;
 
-	// Button
-	constexpr auto in_jump = 0xd415120;
-
 	// CBaseEntity
 	constexpr auto m_fFlags = 0x98;
 	constexpr auto m_pBoneMatrix = 0xEE0;
@@ -47,16 +44,6 @@ namespace offset
 	constexpr auto m_flFov = 0x405C; // Default: 1.f
 };
 
-struct Bone
-{
-	char pad_01[0xCC];
-	float x;
-	char pad_02[0xC];
-	float y;
-	char pad_03[0xC];
-	float z;
-};
-
 struct GlowMode {
 	int8_t GeneralGlowMode, BorderGlowMode, BorderSize, TransparentLevel;
 };
@@ -65,9 +52,8 @@ struct GlowColor {
 	float R, G, B;
 };
 
-
 extern bool Vec2_Empty(const Vector2& value);
 extern bool Vec3_Empty(const Vector3& value);
 extern void NormalizeAngles(Vector2& angle);
 extern Vector2 CalcAngle(const Vector3& src, const Vector3& dst);
-extern bool WorldToScreen(Matrix ViewMatrix, RECT Size, Vector3 vIn, Vector2& vOut);
+extern bool WorldToScreen(Matrix ViewMatrix, const Vector2& game_size, Vector3 vIn, Vector2& vOut);

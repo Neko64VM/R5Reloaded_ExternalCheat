@@ -1,11 +1,11 @@
 #pragma once
 #include "Config/Config.h"
 #include "Memory/Memory.h"
-#include "SimpleMath/SimpleMath.h"
 #include <vector>
 #include <thread>
 #include <string>
 #include <shared_mutex>
+#include <SimpleMath/SimpleMath.h>
 using namespace DirectX::SimpleMath;
 
 #ifndef UTILS_H

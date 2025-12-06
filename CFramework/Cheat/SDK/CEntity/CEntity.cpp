@@ -45,7 +45,7 @@ CEntity CEntity::GetObservingTarget(const uintptr_t& entitylist)
 	return result;
 }
 
-BoundingBox CEntity::GetBoundingBoxData(Matrix& ViewMatrix)
+BoundingBox CEntity::GetBoundingBoxData(Matrix& ViewMatrix, const Vector2 gameSize)
 {
 	BoundingBox bbOut{};
 	const Collision collision = GetCollision();
@@ -58,10 +58,10 @@ BoundingBox CEntity::GetBoundingBoxData(Matrix& ViewMatrix)
 				Vector3(max.x, min.y, min.z), Vector3(max.x, max.y, max.z), Vector3(min.x, max.y, max.z),
 				Vector3(min.x, min.y, max.z), Vector3(max.x, min.y, max.z) };
 
-	if (!WorldToScreen(ViewMatrix, g.rcSize, points[3], flb) || !WorldToScreen(ViewMatrix, g.rcSize, points[5], brt) ||
-		!WorldToScreen(ViewMatrix, g.rcSize, points[0], blb) || !WorldToScreen(ViewMatrix, g.rcSize, points[4], frt) ||
-		!WorldToScreen(ViewMatrix, g.rcSize, points[2], frb) || !WorldToScreen(ViewMatrix, g.rcSize, points[1], brb) ||
-		!WorldToScreen(ViewMatrix, g.rcSize, points[6], blt) || !WorldToScreen(ViewMatrix, g.rcSize, points[7], flt))
+	if (!WorldToScreen(ViewMatrix, gameSize, points[3], flb) || !WorldToScreen(ViewMatrix, gameSize, points[5], brt) ||
+		!WorldToScreen(ViewMatrix, gameSize, points[0], blb) || !WorldToScreen(ViewMatrix, gameSize, points[4], frt) ||
+		!WorldToScreen(ViewMatrix, gameSize, points[2], frb) || !WorldToScreen(ViewMatrix, gameSize, points[1], brb) ||
+		!WorldToScreen(ViewMatrix, gameSize, points[6], blt) || !WorldToScreen(ViewMatrix, gameSize, points[7], flt))
 		return bbOut;
 
 	Vector2 vec2_array[] = { flb, brt, blb, frt, frb, brb, blt, flt };
@@ -133,7 +133,7 @@ bool CEntity::IsDead()
 
 bool CEntity::IsVisible(const float& baseTime)
 {
-	return m_lastvisibletime + 0.15f >= baseTime;
+	return m_lastvisibletime + 0.3f >= baseTime;
 }
 
 void CEntity::SetViewAngle(const Vector2& angle)
@@ -169,11 +169,11 @@ float CEntity::GetTimeBase()
 Vector3 CEntity::GetBoneByID(int BoneId)
 {
 	Vector3 vOut = m_vecAbsOrigin;
-	Bone EntityBone = m.Read<Bone>(m_pBoneArray + BoneId * 0x30);
+	CBone bonePos = m.Read<CBone>(m_pBoneArray + (BoneId * 0x30));
 
-	vOut.x += EntityBone.x;
-	vOut.y += EntityBone.y;
-	vOut.z += EntityBone.z;
+	vOut.x += bonePos.x;
+	vOut.y += bonePos.y;
+	vOut.z += bonePos.z;
 
 	return vOut;
 }

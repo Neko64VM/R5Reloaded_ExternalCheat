@@ -2,7 +2,6 @@
 #include "Framework/Overlay/Overlay.h"
 #include "Framework/ImGui/Fonts/RobotoRegular.h"
 
-auto overlay = std::make_unique<Overlay>();
 auto cheat = std::make_unique<CFramework>();
 
 void Memory::SetBaseAddress()
@@ -13,7 +12,8 @@ void Memory::SetBaseAddress()
 
 void Overlay::OverlayUserFunction()
 {
-	cheat->MiscAll();
+	// ここで
+	cheat->MultiFeatures();
 
 	cheat->RenderInfo();
 
@@ -24,47 +24,27 @@ void Overlay::OverlayUserFunction()
 		cheat->RenderMenu();
 }
 
-// DEBUG時にはコンソールウィンドウを表示する
-#if _DEBUG
-int main()
-#else 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-#endif
+void CFramework::Init()
 {
-	// プロセスに接続する
-	if (!m.AttachProcess("r5apex.exe", InitializeMode::PROCESS)) // 詳細は Framework/Memory/Memory.h を参照
-		return 1;
-
-	// Overlay
-	if (!overlay->InitOverlay("r5apex.exe", InitializeMode::PROCESS))
-		return 2;
-
-	// ConfigSystem
-	if (!config.InitConfigSystem("NekoHack", "R5Reloaded")) // BaseDir/MainDir
-		return 3;
-
-	// ImGui Style
+	// Style
 	ImGuiStyle& style = ImGui::GetStyle();
-
-	// Border
-	style.WindowBorderSize = 0.f;
+	style.WindowBorderSize = 0.f; // Border
 	style.ChildBorderSize = 1.f;
 	style.PopupBorderSize = 1.f;
 	style.FrameBorderSize = 0.f;
 	style.TabBorderSize = 1.f;
 	style.TabBarBorderSize = 0.f;
-	// Rounding
-	style.WindowRounding = 0.f;
+	style.WindowRounding = 0.f; // Rounding
 	style.ChildRounding = 6.f;
 	style.FrameRounding = 0.f;
 	style.PopupRounding = 0.f;
 	style.TabRounding = 0.f;
-	// Misc
-	style.ScrollbarSize = 3.f;
+	style.ScrollbarSize = 3.f; // Misc
 	style.GrabMinSize = 5.f;
 	style.SeparatorTextBorderSize = 1.f;
 	style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
 
+	// Color
 	ImVec4* colors = ImGui::GetStyle().Colors;
 	colors[ImGuiCol_WindowBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
 	colors[ImGuiCol_Border] = ImVec4(0.27f, 0.27f, 0.27f, 0.50f);
@@ -93,21 +73,43 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	io.IniFilename = nullptr;
 	io.LogFilename = nullptr;
 
-	// Load Font
+	// Load Font and Icon
 	io.Fonts->AddFontFromMemoryCompressedTTF(RobotoRegular_compressed_data, RobotoRegular_compressed_size, 13.f, nullptr);
-
-	// Load Icon
-	static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+	const ImWchar icons_ranges[]{ ICON_MIN_FA, ICON_MAX_FA, 0 };
 	ImFontConfig icons_config;
 	icons_config.MergeMode = true;
 	icons_config.GlyphOffset.y = 2.f;
-	cheat->icon = io.Fonts->AddFontFromMemoryCompressedTTF(FA_compressed_data, FA_compressed_size, 16.f, &icons_config, icons_ranges);
+	m_Icon = io.Fonts->AddFontFromMemoryCompressedTTF(FA_compressed_data, FA_compressed_size, 16.f, &icons_config, icons_ranges);
 	io.Fonts->Build();
+}
 
-	// スレッドを作成
-	std::thread([&]() { cheat->UpdateList(); }).detach(); // ESP/AIM用にプレイヤーのデータをキャッシュする
+// DEBUG時にはコンソールウィンドウを表示する
+#if _DEBUG
+int main()
+#else 
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+#endif
+{
+	auto overlay = std::make_unique<Overlay>();
 
-	// Sleep()の精度を向上させるが、システム全体に影響するので注意 - bHopで使える
+	// プロセスに接続する
+	if (!m.AttachProcess("r5apex.exe", InitializeMode::PROCESS)) // 詳細は Framework/Memory/Memory.h を参照
+		return 1;
+
+	// Overlay
+	if (!overlay->InitOverlay("r5apex.exe", InitializeMode::PROCESS))
+		return 2;
+
+	// ConfigSystem
+	if (!config.InitConfigSystem("NekoHack", "R5Reloaded")) // BaseDir/MainDir
+		return 3;
+
+	cheat->Init();
+
+	// スレッドを作成 - ESP/AIM用にプレイヤーのデータをキャッシュ用
+	std::thread([&]() { cheat->UpdateList(); }).detach();
+
+	// Sleep()の精度を向上させるが、システム全体に影響するので注意
 	timeBeginPeriod(1);
 
 	// MainThread

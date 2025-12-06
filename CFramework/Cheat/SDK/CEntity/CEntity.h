@@ -11,11 +11,11 @@ struct alignas(0x20) Collision {
 };
 
 struct CBone {
-	char* padding0[0xCC]{};
+	char padding0[0xCC]{};
 	float x{};
-	char* padding1[0xC]{};
+	char padding1[0xC]{};
 	float y{};
-	char* padding2[0xC]{};
+	char padding2[0xC]{};
 	float z{};
 };
 
@@ -52,7 +52,7 @@ public:
 	bool IsSpectator();
 
 	Collision GetCollision();
-	BoundingBox GetBoundingBoxData(Matrix& ViewMatrix);
+	BoundingBox GetBoundingBoxData(Matrix& ViewMatrix, const Vector2 gameSize);
 
 	CEntity GetObservingTarget(const uintptr_t& entitylist);
 	uintptr_t GetCurrentWeapon(const uintptr_t& entitylist);

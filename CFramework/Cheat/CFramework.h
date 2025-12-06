@@ -14,43 +14,27 @@
 class CFramework
 {
 public:
-    ImFont* icon{ nullptr };
-
+    void Init();
     void UpdateList();
-    void MiscAll();
-
 	void RenderInfo();
 	void RenderMenu();
     void RenderESP();
+    void SpectatorCrash();
+    void MultiFeatures();
 private:
+    ImFont* m_Icon{ nullptr };
+    Vector2 m_screenSize{ Vector2() };
+    ImColor COLOR_RADAR_FRAME{ 1.f, 1.f, 1.f, 0.5f };
     ImColor TEXT_COLOR_DEFAULT{ 1.f, 1.f, 1.f, 1.f };
     ImColor TEXT_COLOR_ATTENTION{ 1.f, 1.f, 0.f, 1.f };
     ImColor TEXT_COLOR_WARNING{ 1.f, 0.f, 0.f, 1.f };
 
-    // Thread safe.
-    std::mutex local_mutex;
-    std::mutex ent_list_mutex;
-    std::mutex spec_list_mutex;
-    std::mutex vmodel_list_mutex;
-
-    CEntity local{};
-    std::vector<CEntity> m_vecEntityList{};
-    std::vector<std::string> m_vecSpectatorList{};
-
-    std::vector<CEntity> GetEntityList() {
-        std::lock_guard<std::mutex> lock(ent_list_mutex);
-        return m_vecEntityList;
-    }
-
-    std::vector<std::string> GetSpectatorList() {
-        std::lock_guard<std::mutex> lock(spec_list_mutex);
-        return m_vecSpectatorList;
-    }
-
-    CEntity GetLocal() {
-        std::lock_guard<std::mutex> lock(local_mutex);
-        return local;
-    }
+    // スレッドセーフを考慮する
+    std::mutex mtx;
+    CEntity m_CLocal{};
+    CEntity m_CLocalCopy{}; // UpdateList() 関数以外で使用する
+    std::vector<CEntity> m_CEntityList{};
+    std::vector<std::string> m_CSpectatorList{};
 
     int m_bodySKinId{ -1 };
     int m_weaponSKinId{ -1 };
@@ -59,7 +43,7 @@ private:
     bool AimBotKeyCheck(DWORD& AimKey0, DWORD& AimKey1, int AimKeyMode);
 };
 
-class Renderer
+class CRenderer
 {
 public:
     ImColor TEXT_COLOR{ 1.f, 1.f, 1.f, 1.f };

@@ -23,12 +23,12 @@ class Memory
 {
 private:
 	DWORD m_dwPID;
-	HANDLE m_hProcess;
 
 	void SetBaseAddress();
 	MODULEENTRY32 GetModule(const std::string moduleName);
 	PROCESSENTRY32 GetProcess(const std::string processName);
 public:
+	HANDLE m_hProcess;
 	uintptr_t m_dwClientBaseAddr;
 
 	bool AttachProcess(const char* targetName, InitializeMode InitMode);

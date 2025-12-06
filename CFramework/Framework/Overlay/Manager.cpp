@@ -33,36 +33,54 @@ void Overlay::OverlayManager()
         return;
     }
 
-    // オーバーレイをゲームの上に配置
-    HWND ProcessHwnd = GetWindow(hWnd, GW_HWNDPREV);
-    SetWindowPos(m_hWnd, ProcessHwnd, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-
     // ShowMenu Toggle
-    if (GetKeyState(g.dwMenuKey) && !g.bShowMenu) {
-        g.bShowMenu = true;
+    static bool menu = false;
+
+    if (utils::IsKeyDown(g.dwMenuKey) && !menu) {
+        g.bShowMenu = !g.bShowMenu;
+        menu = true;
     }
-    else if (!GetKeyState(g.dwMenuKey) && g.bShowMenu) {
-        g.bShowMenu = false;
+    else if (!utils::IsKeyDown(g.dwMenuKey) && menu) {
+        menu = false;
+    }
+
+    // オーバーレイをゲームの上に配置
+    HWND processHwnd = GetWindow(hWnd, GW_HWNDPREV);
+    SetWindowPos(m_hWnd, processHwnd, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
+    // Window Style Changer
+    HWND ForegroundWindow = GetForegroundWindow();
+    LONG TmpLong = GetWindowLong(m_hWnd, GWL_EXSTYLE);
+
+    if (ForegroundWindow == m_hWnd && !g.bShowMenu && DefaultStyle != TmpLong) {
+        SetWindowLong(m_hWnd, GWL_EXSTYLE, DefaultStyle);
+    }
+    else if (ForegroundWindow != hWnd && g.bShowMenu && MenuStyle != TmpLong) {
+        SetWindowLong(m_hWnd, GWL_EXSTYLE, MenuStyle);
     }
 
     // サイズを取得
-    RECT TmpRect{};
-    POINT TmpPoint{};
-    GetClientRect(hWnd, &TmpRect);
-    ClientToScreen(hWnd, &TmpPoint);
+    static Vector2 oldSize{};
+    static POINT oldPoint{};
+    RECT currentRect{};
+    POINT currentPoint{};
+    GetClientRect(hWnd, &currentRect);
+    ClientToScreen(hWnd, &currentPoint);
 
     // ImGuiにマウス入力を渡す
     POINT MousePos{};
     GetCursorPos(&MousePos);
-    ImGui::GetIO().MousePos = ImVec2(MousePos.x - TmpPoint.x, MousePos.y - TmpPoint.y);
+    ImGui::GetIO().MousePos = ImVec2(MousePos.x - currentPoint.x, MousePos.y - currentPoint.y);
     ImGui::GetIO().MouseDown[0] = utils::IsKeyDown(VK_LBUTTON);
 
     // Window Resizer
-    if (TmpRect.left != g.rcSize.left || TmpRect.bottom != g.rcSize.bottom || TmpRect.top != g.rcSize.top || TmpRect.right != g.rcSize.right || TmpPoint.x != g.ptPoint.x || TmpPoint.y != g.ptPoint.y)
+    if (currentRect.right != g.gameSize.x || currentRect.bottom != g.gameSize.y || currentPoint.x != oldPoint.x || currentPoint.y != oldPoint.y)
     {
-        g.rcSize = TmpRect;
-        g.ptPoint = TmpPoint;
-        SetWindowPos(m_hWnd, nullptr, TmpPoint.x, TmpPoint.y, g.rcSize.right, g.rcSize.bottom, SWP_NOREDRAW);
+        g.gameSize.x = currentRect.right;
+        g.gameSize.y = currentRect.bottom;
+        oldPoint = currentPoint;
+
+        SetWindowPos(m_hWnd, nullptr, currentPoint.x, currentPoint.y, currentRect.right, currentRect.bottom, SWP_NOREDRAW);
     }
 }
 

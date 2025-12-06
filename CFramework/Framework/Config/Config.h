@@ -8,6 +8,8 @@
 #include <nlohmann/json.hpp>
 #include <atomic>
 #include "../Framework.h"
+#include <SimpleMath/SimpleMath.h>
+using namespace DirectX::SimpleMath;
 using json = nlohmann::json;
 
 // GlobalVars
@@ -22,8 +24,7 @@ struct GlobalVars
 
     // Window Data
     HWND hGameWindow{};
-    RECT rcSize{};
-    POINT ptPoint{};
+    Vector2 gameSize{};
 
     // KeyData
     DWORD dwMenuKey{ VK_INSERT };
@@ -45,6 +46,7 @@ struct GlobalVars
 
     // Visual
     bool VisualEnable{ true };
+    bool RadarEnable{ true };
     int GlowStyle = 0;
     bool ESP_NPC{ true };
     bool ESP_Team{ false };
@@ -56,6 +58,7 @@ struct GlobalVars
     bool bDistance{ true };
     bool bName{ true };
     bool bWeapon{ true };
+    float RadarScale{ 12.f };
     int ESP_BoxType{ 1 };
     int ESP_BoxRenderMode{ 1 };
     int ESP_MaxDistance{ 500 };
@@ -77,9 +80,9 @@ struct GlobalVars
     float m_flGlobalAlpha{ 0.925f };
     float m_flShadowAlpha{ 0.235f };
     ImColor Color_ESP_Team{ 0.f, 0.75f, 1.f, m_flGlobalAlpha };
-    ImColor Color_ESP_Enemy{ 1.f, 1.f, 1.f, m_flGlobalAlpha };
-    ImColor Color_ESP_Visible{ 1.f, 0.5f, 0.f, m_flGlobalAlpha };
-    ImColor Color_ESP_AimTarget{ 1.f, 0.f, 0.f, m_flShadowAlpha };
+    ImColor Color_ESP_Enemy{ 1.f, 0.f, 0.f, m_flGlobalAlpha };
+    ImColor Color_ESP_Visible{ 0.f, 1.f, 0.f, m_flGlobalAlpha };
+    ImColor Color_ESP_AimTarget{ 1.f, 1.f, 0.f, m_flShadowAlpha };
     ImColor Color_ESP_Shadow{ 0.f, 0.f, 0.f, m_flShadowAlpha };
     ImColor Color_AimFOV{ 1.f, 1.f, 1.f, 0.35f };
     ImColor Color_Crosshair{ 0.f, 1.f, 0.f, 1.f };

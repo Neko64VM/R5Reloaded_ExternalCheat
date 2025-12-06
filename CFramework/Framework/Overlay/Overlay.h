@@ -13,15 +13,14 @@ private:
 	// オーバーレイに登録する情報
 	WNDCLASSEXA wc{};
 	HWND m_hWnd;
-	char m_szTitle[32] = "The Overlay";
-	char m_szClass[32] = "WND_CLS";
+	char m_szTitle[32]{ "Overlay#1337" };
+	char m_szClass[32]{ "WND_CLS"};
 
 	// ターゲットウィンドウに関する情報
 	char m_TargetTitle[128]{};
-	RECT m_GameRect{};
-	POINT m_GamePoint{};
 
 	// オーバーレイのスタイル
+	LONG MenuStyle = WS_EX_LAYERED | WS_EX_TOOLWINDOW;
 	LONG DefaultStyle = WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_TOOLWINDOW;
 
 	bool CreateOverlay();

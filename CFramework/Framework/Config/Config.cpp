@@ -185,17 +185,17 @@ json ConfigManager::GetDefaultConfig()
             {"a", 0.925f }}},
         { "Col_ESP_Enemy", {
             {"r", 1.f },
-            {"g", 1.f },
-            {"b", 1.f },
+            {"g", 0.f },
+            {"b", 0.f },
             {"a", 0.925f }}},
         { "Color_ESP_Visible", {
-            {"r", 1.f },
-            {"g", 0.5f },
+            {"r", 0.f },
+            {"g", 1.f },
             {"b", 0.f },
             {"a", 0.925f }}},
         { "Col_ESP_AimTarget", {
             {"r", 1.f },
-            {"g", 0.f },
+            {"g", 1.f },
             {"b", 0.f },
             {"a", 0.925f }}},
         { "Col_ESP_Shadow", {
