@@ -2,10 +2,10 @@
 #include "../Framework/Config/ConfigManager.h"
 #include "../Framework/Input/Input.hpp"
 
+// このメニューはスレッドセーフを考慮していません :skull:
+
 // Menu, Config
 int Index = 0;
-int BindingID = 0;
-int FileNum = 0;
 bool deleteFlag = false;
 const char* AimBoneList[]{ "Head", "Chest"};
 const char* AimKeyModeList[]{ "None Key", "and", "or" };
@@ -52,6 +52,7 @@ void CFramework::RenderMenu()
 		Custom::Toggle("AimBot", &g.AimBotEnable, theme);
 		Custom::Checkbox("VisCheck", &g.bVisCheck, theme);
         Custom::Checkbox("RemoveSway", &g.bRemoveSway, theme);
+        Custom::Checkbox("Aim at Team", &g.bAimAtTeam, theme);
 
         ImGui::Dummy(ImVec2(0.f, 8.f));
 
@@ -87,40 +88,34 @@ void CFramework::RenderMenu()
 
 		static bool bFirstKeyBinding = false;
         static bool bSecondKeyBinding = false;
-        static DWORD key01{ NULL };
-        static DWORD key02{ NULL };
-        const char* keyName = bFirstKeyBinding ? "<Press any key...>" : OverlayInput::GetKeyName(key01);
+        const char* keyName = bFirstKeyBinding ? "<Press any key...>" : OverlayInput::GetKeyName(g.dwAimKey0);
 
-        if (ImGui::Button(keyName, ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
-        {
+        Custom::SectionHeader("1st Key:", theme);
+
+        if (ImGui::Button(keyName, ImVec2(ImGui::GetContentRegionAvail().x, 20.f))) {
 			bFirstKeyBinding = true;
-            input.KeyBind(key01, bFirstKeyBinding);
         }
 
         if (bFirstKeyBinding)
-            input.KeyBind(key01, bFirstKeyBinding);
+            input.KeyBind(g.dwAimKey0, bFirstKeyBinding);
 
-        const char* keyName1 = bSecondKeyBinding ? "<Press any key...>" : OverlayInput::GetKeyName(key02);
+        ImGui::Dummy(ImVec2(0.f, 8.f));
+
+        Custom::SectionHeader("2nd Key:", theme);
+
+        const char* keyName1 = bSecondKeyBinding ? "<Press any key...>" : OverlayInput::GetKeyName(g.dwAimKey1);
 
         ImGui::PushID("SecondKeyBind");
-        if (ImGui::Button(keyName1, ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
-        {
+        if (ImGui::Button(keyName1, ImVec2(ImGui::GetContentRegionAvail().x, 20.f))) {
             bSecondKeyBinding = true;
-            input.KeyBind(key02, bSecondKeyBinding);
         }
         ImGui::PopID();
 
         if (bSecondKeyBinding)
-            input.KeyBind(key02, bSecondKeyBinding);
+            input.KeyBind(g.dwAimKey1, bSecondKeyBinding);
 
-		if (key01 == key02 && key01 != NULL)
-			key02 = NULL;
-        else {
-            g.dwAimKey0 = key01;
-            g.dwAimKey1 = key02;
-        }
-
-        printf("%d, %d\n", key01, key02);
+		if (g.dwAimKey0 == g.dwAimKey1 && g.dwAimKey0 != NULL)
+			g.dwAimKey1 = NULL;
 
         /*--------------------------------------------------------*/
         Custom::EndSection(theme);
@@ -250,25 +245,30 @@ void CFramework::RenderMenu()
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
         ImGui::ListBox("##List", &configIndex, items.data(), static_cast<int>(items.size()));
 
-		if (ImGui::Button("Save", ImVec2(ImGui::GetContentRegionAvail().x / 2.f - 4.f, 20.f)) && !items.empty())
+		if (ImGui::Button("Save", ImVec2(ImGui::GetContentRegionAvail().x / 2.f - 4.f, 30.f)) && !items.empty())
 		{
 			config.SaveSetting(items[configIndex]);
 		}
 
         ImGui::SameLine();
 
-        if (ImGui::Button("Load", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)) && !items.empty())
+        if (ImGui::Button("Load", ImVec2(ImGui::GetContentRegionAvail().x, 30.f)) && !items.empty())
         {
             config.LoadSetting(items[configIndex]);
         }
 
         if (!g.GenerateFlag)
         {
-            if (ImGui::Button("Generate ConfigFile", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
+            if (ImGui::Button("Generate Config", ImVec2(ImGui::GetContentRegionAvail().x, 30.f)))
             {
                 g.newConfigName.clear();
                 g.GenerateFlag = true;
             }
+        }
+
+        if (ImGui::Button("Delete Config", ImVec2(ImGui::GetContentRegionAvail().x, 30.f)))
+        {
+            deleteFlag = true;
         }
 
         if (g.GenerateFlag)
@@ -307,7 +307,9 @@ void CFramework::RenderMenu()
 
         if (deleteFlag)
         {
-            ImGui::Text("Delete this file?");
+            std::string deleteText = "Delete " + (std::string)items[configIndex] + "?";
+
+            ImGui::Text(deleteText.c_str());
 
             if (ImGui::Button("OK", ImVec2(90.f, 20.f))) {
                 if (!items.empty()) {
