@@ -1,7 +1,10 @@
 #include "CEntity.h"
+#include "../../../Framework/Memory/Memory.h"
 
 bool CEntity::Update()
 {
+	std::vector<uint8_t> buffer;
+
 	m_vecAbsOrigin = m.Read<Vector3>(m_address + offset::m_localOrigin);
 	m_iHealth = m.Read<int>(m_address + offset::m_iHealth);
 
@@ -36,11 +39,10 @@ void CEntity::GetName()
 
 CEntity CEntity::GetObservingTarget(const uintptr_t& entitylist)
 {
-	CEntity result{};
+	CEntity result{0};
 
 	uint32_t Index = m.Read<uint32_t>(m_address + offset::m_hObserverTarget) & 0xFFFF;
 	result.m_address = m.Read<uintptr_t>(entitylist + ((Index - 1) * 0x20));
-
 
 	return result;
 }
@@ -100,6 +102,16 @@ uintptr_t CEntity::GetCurrentWeapon(const uintptr_t& entitylist)
 	uint32_t Index = m.Read<uint32_t>(m_address + 0x1704) & 0xFFFF;
 
 	return m.Read<uintptr_t>(entitylist + ((Index - 1) * 0x20));
+}
+
+std::string CEntity::GetWeaponName(const uintptr_t& entitylist)
+{
+	char szWeapon[64]{};
+	uintptr_t latestWeapon = GetCurrentWeapon(entitylist);
+	uintptr_t pWeaponName = m.Read<uintptr_t>(latestWeapon + 0x1870);
+	m.ReadString(pWeaponName, szWeapon, sizeof(szWeapon));
+
+	return std::string(szWeapon);
 }
 
 uintptr_t CEntity::GetHandViewModel(const uintptr_t& entitylist)

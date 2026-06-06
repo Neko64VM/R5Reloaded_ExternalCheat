@@ -1,16 +1,12 @@
 #pragma once
-#include "../ImGui/imgui.h"
-#include <vector>
-#include <string>
-#include <iostream>
-#include <Windows.h>
-#include <filesystem>
-#include <nlohmann/json.hpp>
 #include <atomic>
-#include "../Framework.h"
+#include <nlohmann/json.hpp>
 #include <SimpleMath/SimpleMath.h>
+#include "../ImGui/imgui.h"
 using namespace DirectX::SimpleMath;
 using json = nlohmann::json;
+
+extern std::atomic<bool> g_ApplicationActive;
 
 // GlobalVars
 struct GlobalVars
@@ -37,6 +33,7 @@ struct GlobalVars
     bool bRemoveSway{ true };
     bool bShowFOV{ true };
     bool bRainbowFOV{ false };
+
     int AimFOV{ 150 };
     float AimSmooth{ 2.5f };
     int AimMode{ 0 };
@@ -50,6 +47,7 @@ struct GlobalVars
     int GlowStyle = 0;
     bool ESP_NPC{ true };
     bool ESP_Team{ false };
+
     bool bBox{ true };
     bool bFilled{ false };
     bool bLine{ false };
@@ -88,22 +86,4 @@ struct GlobalVars
     ImColor Color_Crosshair{ 0.f, 1.f, 0.f, 1.f };
 };
 
-class ConfigManager
-{
-private:
-    std::string m_szConfigPath;
-    json GetDefaultConfig();
-public:
-    // AppData\Local 内に作るフォルダの名前
-    bool InitConfigSystem(const std::string configDirName);
-    bool InitConfigSystem(const std::string baseDirName, const std::string configDirName);
-    bool CreateNewConfig(const std::string& configName);
-    void DeleteConfig(const std::string& configName);
-    std::vector<std::string> GetFileList(); // ConfigDir内の設定ファイル一覧を取得
-    void LoadSetting(const std::string filename);
-    void SaveSetting(const std::string filename);
-};
-
-extern std::atomic<bool> g_ApplicationActive;
 extern GlobalVars g;
-extern ConfigManager config;

@@ -42,7 +42,8 @@ bool Memory::AttachProcess(const char* targetName, InitializeMode InitMode)
         return false;
     }
 
-    this->SetBaseAddress();
+    // ベースアドレス等をここで取得しておく
+    m_dwClientBaseAddr = GetModuleBaseAddress(m_szTargetMmodule);
 
     return true;
 }
@@ -87,6 +88,8 @@ uintptr_t Memory::FindPattern(const std::vector<uint8_t>& read_data, const uintp
             return (result - baseAddress);
         }
     }
+
+    return 0;
 }
 
 MODULEINFO Memory::GetModuleInfo(const std::string moduleName)

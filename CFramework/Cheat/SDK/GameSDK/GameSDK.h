@@ -1,5 +1,7 @@
 #pragma once
-#include "../../../Framework/Config/Config.h"
+#include <iostream>
+#include <SimpleMath/SimpleMath.h>
+using namespace DirectX::SimpleMath;
 
 namespace offset
 {

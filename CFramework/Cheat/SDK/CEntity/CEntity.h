@@ -26,6 +26,9 @@ struct CPlayerBoneArray {
 class CEntity
 {
 public:
+	// コンストラクタでm_addressに代入し初期化
+	CEntity(uintptr_t address) : m_address(address) {};
+
 	uintptr_t m_address{ 0 };
 
 	// Player
@@ -67,6 +70,7 @@ public:
 	Vector2 GetSwayAngle();
 	Vector2 GetPunchAngle();
 	Vector2 GetWeaponPunchAngle();
+	std::string GetWeaponName(const uintptr_t& entitylist);
 	CPlayerBoneArray GetBoneArray();
 	Vector3 GetBoneByID(int BoneId);
 	void EnableGlow(GlowColor color, GlowMode mode);

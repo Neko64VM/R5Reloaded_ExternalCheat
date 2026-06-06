@@ -1,4 +1,6 @@
 #include "Overlay.h"
+#include "../Config/Config.h"
+#include "../Utils.hpp"
 
 bool Overlay::InitOverlay(const char* targetName, InitializeMode InitMode)
 {
@@ -29,7 +31,7 @@ void Overlay::OverlayManager()
     // Window Check
     HWND hWnd = FindWindowA(nullptr, m_TargetTitle);
     if (!hWnd) {
-        g_ApplicationActive = false;
+        g_ApplicationActive.store(false);
         return;
     }
 
@@ -71,7 +73,7 @@ void Overlay::OverlayManager()
     POINT MousePos{};
     GetCursorPos(&MousePos);
     ImGui::GetIO().MousePos = ImVec2(MousePos.x - currentPoint.x, MousePos.y - currentPoint.y);
-    ImGui::GetIO().MouseDown[0] = utils::IsKeyDown(VK_LBUTTON);
+    ImGui::GetIO().MouseDown[0] = GetAsyncKeyState(VK_LBUTTON) & 0x8000;
 
     // Window Resizer
     if (currentRect.right != g.gameSize.x || currentRect.bottom != g.gameSize.y || currentPoint.x != oldPoint.x || currentPoint.y != oldPoint.y)

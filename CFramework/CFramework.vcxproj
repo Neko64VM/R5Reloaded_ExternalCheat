@@ -139,15 +139,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Cheat\Features.cpp" />
+    <ClCompile Include="Cheat\CFramework.cpp" />
     <ClCompile Include="Cheat\Menu.cpp" />
-    <ClCompile Include="Cheat\Render.cpp" />
     <ClCompile Include="Cheat\SDK\CEntity\CEntity.cpp" />
     <ClCompile Include="Cheat\SDK\GameSDK\GameSDK.cpp" />
     <ClCompile Include="Cheat\UpdateList.cpp" />
     <ClCompile Include="Cheat\Visual.cpp" />
     <ClCompile Include="Framework\Config\Config.cpp" />
-    <ClCompile Include="Framework\Framework.cpp" />
+    <ClCompile Include="Framework\Config\ConfigManager.cpp" />
     <ClCompile Include="Framework\ImGui\Custom.cpp" />
     <ClCompile Include="Framework\ImGui\imgui.cpp" />
     <ClCompile Include="Framework\ImGui\imgui_demo.cpp" />
@@ -157,9 +156,12 @@
     <ClCompile Include="Framework\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="Framework\ImGui\imgui_tables.cpp" />
     <ClCompile Include="Framework\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="Framework\Input\Input.cpp" />
     <ClCompile Include="Framework\Memory\Memory.cpp" />
     <ClCompile Include="Framework\Overlay\Manager.cpp" />
     <ClCompile Include="Framework\Overlay\Overlay.cpp" />
+    <ClCompile Include="Framework\Render\Render.cpp" />
+    <ClCompile Include="Framework\Utils.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -167,7 +169,7 @@
     <ClInclude Include="Cheat\SDK\CEntity\CEntity.h" />
     <ClInclude Include="Cheat\SDK\GameSDK\GameSDK.h" />
     <ClInclude Include="Framework\Config\Config.h" />
-    <ClInclude Include="Framework\Framework.h" />
+    <ClInclude Include="Framework\Config\ConfigManager.h" />
     <ClInclude Include="Framework\ImGui\Custom.h" />
     <ClInclude Include="Framework\ImGui\Fonts\fa.h" />
     <ClInclude Include="Framework\ImGui\Fonts\IconsFontAwesome6.h" />
@@ -181,13 +183,19 @@
     <ClInclude Include="Framework\ImGui\imstb_rectpack.h" />
     <ClInclude Include="Framework\ImGui\imstb_textedit.h" />
     <ClInclude Include="Framework\ImGui\imstb_truetype.h" />
+    <ClInclude Include="Framework\Input\Input.hpp" />
     <ClInclude Include="Framework\Memory\Memory.h" />
     <ClInclude Include="Framework\Overlay\Overlay.h" />
+    <ClInclude Include="Framework\Render\Render.hpp" />
+    <ClInclude Include="Framework\Utils.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.gitignore" />
     <None Include="..\LICENSE" />
     <None Include="..\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\r5reloaded_dump.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

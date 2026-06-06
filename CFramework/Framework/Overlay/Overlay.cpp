@@ -2,6 +2,8 @@
 #include "../ImGui/Fonts/fa.h"
 #include "../ImGui/Fonts/IconsFontAwesome6.h"
 #include <TlHelp32.h>
+#include "../Config/Config.h"
+#include <thread>
 
 ID3D11Device* g_pd3dDevice = NULL;
 ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
@@ -159,7 +161,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             return 0;
         break;
     case WM_DESTROY:
-        g_ApplicationActive = false;
+        g_ApplicationActive.store(false);
         PostQuitMessage(0);
         return 0;
     case WM_DPICHANGED:

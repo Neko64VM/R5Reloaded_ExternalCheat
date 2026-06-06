@@ -1,10 +1,12 @@
 #include "CFramework.h"
+#include "../Framework/Config/ConfigManager.h"
+#include "../Framework/Input/Input.hpp"
 
 // Menu, Config
 int Index = 0;
 int BindingID = 0;
 int FileNum = 0;
-bool DeleteFlag = false;
+bool deleteFlag = false;
 const char* AimBoneList[]{ "Head", "Chest"};
 const char* AimKeyModeList[]{ "None Key", "and", "or" };
 const char* BoxRenderModeList[]{ "Bone", "BoundingBox" };
@@ -15,120 +17,191 @@ const char* ViewModelGlowTypeList[]{ "None", "Border Only", "Border + Filled"};
 const std::vector<const char*> MenuStringList{ "AimBot", "Visual", "Misc", "Setting" };
 const std::vector<const char*> MenuIconList{ ICON_FA_CROSSHAIRS, ICON_FA_EYE, ICON_FA_BARS, ICON_FA_GEAR };
 
+OverlayInput input;
+
 void CFramework::RenderMenu()
 {
-    // Setup
-    ImGuiStyle& style = ImGui::GetStyle();
-    ImVec4* colors = style.Colors;
+    Custom::PushTheme(theme);
 
-    //ImGui::SetNextWindowBgAlpha(0.975f);
-    ImGui::SetNextWindowSize(ImVec2(725.f, 450.f));
-    ImGui::Begin("R5Reloaded [ EXTERNAL ]", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    ImGui::SetNextWindowSize(ImVec2(900.f, 600.f), ImGuiCond_Always);
 
-    //---// Clild 0 //-----------------------------------//
-    ImGui::BeginChild("##SelectChild", ImVec2(150.f, ImGui::GetContentRegionAvail().y), false);
+    ImGui::Begin("##menu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-    ImGui::SetCursorPosY(25.f);
+    Custom::BeginSideNav("CUSTOM MENU", 170.f, theme);
+    {
+        Custom::SideNavGroup("HACK", theme);
+        Custom::SideNavItem("AimBot", 0, &Index, theme, ICON_FA_CROSSHAIRS);
+        Custom::SideNavItem("Visual", 1, &Index, theme, ICON_FA_EYE);
+        Custom::SideNavItem("Exploit", 2, &Index, theme, ICON_FA_BARS);
 
-    ImGui::PushFont(m_Icon);
+        Custom::SideNavGroup("SYSTEM", theme);
+        Custom::SideNavItem("Config", 3, &Index, theme, ICON_FA_FLOPPY_DISK);
+        Custom::SideNavItem("Setting", 4, &Index, theme, ICON_FA_GEAR);
+    }
+    Custom::EndSideNav();
 
-    for (int i = 0; i < MenuIconList.size(); i++) {
-        if (ImGui::CustomButton(MenuIconList[i], MenuStringList[i], ImVec2(ImGui::GetContentRegionAvail().x, 35.f), Index == i ? true : false))
-            Index = i;
+    ImGui::SameLine(0.f, 12.f);
+
+    Custom::BeginContentArea(&Index, theme);
+
+    // Page 1
+    if (Custom::BeginTwoColumnPage(0, theme))
+    {
+        Custom::BeginSection("AimBot", theme);
+        /*--------------------------------------------------------*/
+		Custom::Toggle("AimBot", &g.AimBotEnable, theme);
+		Custom::Checkbox("VisCheck", &g.bVisCheck, theme);
+        Custom::Checkbox("RemoveSway", &g.bRemoveSway, theme);
+
+        ImGui::Dummy(ImVec2(0.f, 8.f));
+
+		Custom::SectionHeader("AimBot Setting", theme);
+		Custom::SliderInt("AimFOV", &g.AimFOV, 100, 500, theme);
+		Custom::SliderFloat("Smooth", &g.AimSmooth, 1.f, 30.f, theme);
+        Custom::SliderInt("AimDistance", &g.AimMaxDistance, 15, 500, theme);
+
+		Custom::Combo("TargetBone", &g.AimTargetBone, AimBoneList, IM_ARRAYSIZE(AimBoneList), theme);
+
+        /*--------------------------------------------------------*/
+        Custom::EndSection(theme);
+
+        Custom::TwoColumnSplit(theme);
+
+        Custom::BeginSection("AimBot Config", theme);
+        /*--------------------------------------------------------*/
+
+        Custom::Checkbox("Draw FOV", &g.bShowFOV, theme);
+        Custom::Checkbox("Rainbow FOV", &g.bRainbowFOV, theme);
+        Custom::SliderInt("Aim FOV", &g.AimFOV, 100, 500, theme);
+        ImGui::ColorEdit3("Color", &g.Color_AimFOV.Value.x);
+
+        // 重複防止
+        if (g.dwAimKey0 == g.dwAimKey1)
+            g.dwAimKey1 = NULL;
+        /*--------------------------------------------------------*/
+        ImGui::Dummy(ImVec2(0.f, 8.f));
+        Custom::SectionHeader("KeyBinder", theme);
+        /*--------------------------------------------------------*/
+
+        Custom::Combo("AimKeyMode", &g.AimKeyMode, AimKeyModeList, IM_ARRAYSIZE(AimKeyModeList), theme);
+
+		static bool bFirstKeyBinding = false;
+        static bool bSecondKeyBinding = false;
+        static DWORD key01{ NULL };
+        static DWORD key02{ NULL };
+        const char* keyName = bFirstKeyBinding ? "<Press any key...>" : OverlayInput::GetKeyName(key01);
+
+        if (ImGui::Button(keyName, ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
+        {
+			bFirstKeyBinding = true;
+            input.KeyBind(key01, bFirstKeyBinding);
+        }
+
+        if (bFirstKeyBinding)
+            input.KeyBind(key01, bFirstKeyBinding);
+
+        const char* keyName1 = bSecondKeyBinding ? "<Press any key...>" : OverlayInput::GetKeyName(key02);
+
+        ImGui::PushID("SecondKeyBind");
+        if (ImGui::Button(keyName1, ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
+        {
+            bSecondKeyBinding = true;
+            input.KeyBind(key02, bSecondKeyBinding);
+        }
+        ImGui::PopID();
+
+        if (bSecondKeyBinding)
+            input.KeyBind(key02, bSecondKeyBinding);
+
+		if (key01 == key02 && key01 != NULL)
+			key02 = NULL;
+        else {
+            g.dwAimKey0 = key01;
+            g.dwAimKey1 = key02;
+        }
+
+        printf("%d, %d\n", key01, key02);
+
+        /*--------------------------------------------------------*/
+        Custom::EndSection(theme);
+
+        Custom::EndTwoColumnPage();
     }
 
-    ImGui::PopFont();
-
-    ImGui::EndChild();
-    //---// Clild 0 End //-------------------------------//
-
-    ImGui::SameLine();
-
-    //---// Clild 1 //-----------------------------------//
-    ImGui::BeginChild("##MainChild", ImVec2(ImGui::GetContentRegionAvail()), false);
-
-    //---// Left //--------------------------------------//
-    ImGui::BeginChild("##LeftChild", ImVec2(ImGui::GetContentRegionAvail().x / 2.f - (style.WindowPadding.x * 2), ImGui::GetContentRegionAvail().y), false);
-
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 1.f));
-
-    switch (Index)
+    // Page 2
+    if (Custom::BeginTwoColumnPage(1, theme))
     {
-    case 0:
-        ImGui::BeginChild("##C000", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 3.f), true);
-        ImGui::Text("Visual");
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        ImGui::Checkbox("AimBot", &g.AimBotEnable);
-        ImGui::Checkbox("VisibilityCheck", &g.bVisCheck);
-        ImGui::Checkbox("RemoveSway", &g.bRemoveSway);
-
-        ImGui::EndChild();
-        ImGui::BeginChild("##C001", ImVec2(ImGui::GetContentRegionAvail()), true);
-
-        ImGui::Text("AimBot Setting");
-        ImGui::Separator();
-        ImGui::Spacing();
+        Custom::BeginSection("Visual", theme);
+        /*--------------------------------------------------------*/
         
-        ImGui::CustomSliderInt("Aim FOV", "##a_fov", &g.AimFOV, 30, 150);
-        ImGui::CustomSliderFloat("Smooth", "##a_smt", &g.AimSmooth, 1.f, 30.f);
-        ImGui::CustomSliderInt("MaxDistance", "##a_dist", &g.AimMaxDistance, 15, 500);
+        Custom::Toggle("ESP", &g.VisualEnable, theme);
+        //Custom::Toggle("Glow", &g.GlowEnable, theme);
+        Custom::Toggle("Radar", &g.RadarEnable, theme);
 
-        ImGui::Spacing();
-        ImGui::Spacing();
+        Custom::Checkbox("NPC ESP", &g.ESP_NPC, theme);
+        Custom::Checkbox("Team ESP", &g.ESP_Team, theme);
 
-        ImGui::Combo("TargetBone", &g.AimTargetBone, AimBoneList, IM_ARRAYSIZE(AimBoneList));
+        ImGui::Dummy(ImVec2(0.f, 8.f));
+		Custom::SectionHeader("ESP Options", theme);
 
-        ImGui::EndChild();
-        break;
-    case 1: // visual
-        ImGui::BeginChild("##C010", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 3.f), true);
-        ImGui::Text("Visual");
-        ImGui::Separator();
-        ImGui::Spacing();
+        Custom::Checkbox("Box", &g.bBox, theme);
+        Custom::Checkbox("BoxFilled", &g.bFilled, theme);
+        Custom::Checkbox("Line", &g.bLine, theme);
+        Custom::Checkbox("Skeleton", &g.bSkeleton, theme);
+        Custom::Checkbox("HealthBar", &g.bHealth, theme);
+        Custom::Checkbox("Name", &g.bName, theme);
+        Custom::Checkbox("Distance", &g.bDistance, theme);
+        Custom::Checkbox("Weapon", &g.bWeapon, theme);
 
-        ImGui::Checkbox("ESP", &g.VisualEnable);
-        ImGui::Checkbox("NPC ESP", &g.ESP_NPC);
-        ImGui::Checkbox("Team ESP", &g.ESP_Team);
+        /*--------------------------------------------------------*/
+        Custom::EndSection(theme);
+        Custom::TwoColumnSplit(theme);
+        Custom::BeginSection("Visual Setting", theme);
+        /*--------------------------------------------------------*/
 
-        ImGui::EndChild();
-        ImGui::BeginChild("##C011", ImVec2(ImGui::GetContentRegionAvail()), true);
+        Custom::Combo("GlowMode", &g.GlowStyle, GlowStyleList, IM_ARRAYSIZE(GlowStyleList), theme);
+        Custom::Combo("BoxMode", &g.ESP_BoxRenderMode, BoxRenderModeList, IM_ARRAYSIZE(BoxRenderModeList), theme);
+        Custom::Combo("BoxType", &g.ESP_BoxType, BoxTypeList, IM_ARRAYSIZE(BoxTypeList), theme);
 
-        ImGui::Text("ESP Options");
-        ImGui::Separator();
-        ImGui::Spacing();
+        Custom::SliderInt("Distance", &g.ESP_MaxDistance, 10, 2000, theme);
+        Custom::SliderFloat("RadarScale", &g.RadarScale, 1, 50, theme);
 
-        ImGui::Checkbox("Box", &g.bBox);
-        ImGui::Checkbox("BoxFilled", &g.bFilled);
-        ImGui::Checkbox("Line", &g.bLine);
-        //ImGui::Checkbox("Skeleton", &g.bSkeleton);
-        ImGui::Checkbox("HealthBar", &g.bHealth);
-        ImGui::Checkbox("Name", &g.bName);
-        ImGui::Checkbox("Distance", &g.bDistance);
-        ImGui::Checkbox("Weapon", &g.bWeapon);
+		Custom::SectionHeader("Colors", theme);
+        ImGui::ColorEdit3("Enemy", &g.Color_ESP_Enemy.Value.x);
+        ImGui::ColorEdit3("Visible", &g.Color_ESP_Visible.Value.x);
+        ImGui::ColorEdit3("AimTarget", &g.Color_ESP_AimTarget.Value.x);
+        ImGui::ColorEdit3("Team", &g.Color_ESP_Team.Value.x);
+        ImGui::ColorEdit3("Shadow", &g.Color_ESP_Shadow.Value.x, ImGuiColorEditFlags_DisplayRGB);
 
-        ImGui::EndChild();
-        break;
-    case 2: { // misc
-        ImGui::BeginChild("##C020", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 3.5f), true);
+        /*--------------------------------------------------------*/
+        Custom::EndSection(theme);
+        Custom::EndTwoColumnPage();
+    }
 
-        ImGui::Text("Misc");
-        ImGui::Separator();
-        ImGui::Spacing();
+    // Page 3
+    if (Custom::BeginTwoColumnPage(2, theme))
+    {
+        Custom::BeginSection("Exploit / Misc", theme);
+        /*--------------------------------------------------------*/
 
         //ImGui::Checkbox("BunnyHop", &g.g_bHop);
-        ImGui::Checkbox("RCS", &g.RecoilControllSystem);
-        ImGui::Checkbox("SKinChanger", &g.bSkinChanger);
+        Custom::Toggle("RCS", &g.RecoilControllSystem, theme);
+        Custom::Toggle("SKinChanger", &g.bSkinChanger, theme);
 
-        ImGui::EndChild();
-        ImGui::BeginChild("##C021", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.75f), true);
+        ImGui::Dummy(ImVec2(0.f, 8.f));
+        Custom::SectionHeader("RCS", theme);
+        Custom::Checkbox("RCS", &g.RecoilControllSystem, theme);
+        Custom::SliderFloat("Scale", &g.RCS_Scale, 0.f, 1.f, theme);
 
-        ImGui::Text("AimAssist Value Changer");
-        ImGui::Separator();
-        ImGui::Spacing();
+        ImGui::Dummy(ImVec2(0.f, 8.f));
+        Custom::SectionHeader("SkinChanger", theme);
+        Custom::SliderInt("Body", &m_bodySkinId, 0, 30, theme);
+        Custom::SliderInt("Weapon", &m_weaponSkinId, 0, 30, theme);
 
-        ImGui::CustomSliderFloat("AimAssist", "##aa", &g.AimAssistMod, 0.f, 1.f, "%.2f");
+        ImGui::Dummy(ImVec2(0.f, 8.f));
+        Custom::SectionHeader("AimAssist", theme);
+
+        Custom::SliderFloat("AimAssist", &g.AimAssistMod, 0.f, 1.f, theme);
 
         if (ImGui::Button("Apply", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
             m.Write<float>(m.m_dwClientBaseAddr + offset::AimAssistVal, g.AimAssistMod);
@@ -136,270 +209,167 @@ void CFramework::RenderMenu()
         ImGui::EndChild();
         ImGui::BeginChild("##C022", ImVec2(ImGui::GetContentRegionAvail()), true);
 
-        ImGui::Text("Skin Changer");
-        ImGui::Separator();
-        ImGui::Spacing();
+        Custom::SectionHeader("SkinChanger", theme);
+        Custom::Checkbox("SKinChanger", &g.bSkinChanger, theme);
+        Custom::SliderInt("Body ID", &m_bodySkinId, 0, 15, theme);
+        Custom::SliderInt("Weapon ID", &m_weaponSkinId, 0, 10, theme);
 
-        ImGui::Checkbox("SKinChanger", &g.bSkinChanger);
-        ImGui::CustomSliderInt("Body ID", "##bSkinID", &m_bodySKinId, 0, 15);
-        ImGui::CustomSliderInt("Weapon ID", "##wSkinID", &m_weaponSKinId, 0, 10);
+        /*--------------------------------------------------------*/
+        Custom::EndSection(theme);
+        Custom::TwoColumnSplit(theme);
+        Custom::BeginSection("Any.", theme);
+        /*--------------------------------------------------------*/
 
-        ImGui::EndChild();
-    } break;
-    case 3: // system
-        ImGui::BeginChild("##C030", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 1.75f), true);
 
-        ImGui::Text("System");
-        ImGui::Separator();
-        ImGui::Spacing();
-        ImGui::Checkbox("SpectatorList", &g.SpectatorListEnable);
-        ImGui::Checkbox("Crosshair", &g.CrosshairEnable);
 
-        ImGui::NewLine();
-
-        ImGui::CustomSliderInt("MaxFramerate", "##MaxFrame", &g.MaxFramerate, 30, 500);
-
-        ImGui::EndChild();
-        ImGui::BeginChild("##C031", ImVec2(ImGui::GetContentRegionAvail()), true);
-
-        ImGui::Text("Crosshair");
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        ImGui::Checkbox("Enable##Crosshair", &g.CrosshairEnable);
-        ImGui::CustomSliderInt("CrosshairSize", "##SizeCH", &g.CrosshairSize, 1, 10);
-        ImGui::ColorEdit4("Color##C", &g.Color_Crosshair.Value.x);
-        ImGui::Combo("Type##C", &g.CrosshairType, CrosshairList, IM_ARRAYSIZE(CrosshairList));
-
-        ImGui::EndChild();
-       
-        break;
-    default:
-        break;
+        /*--------------------------------------------------------*/
+        Custom::EndSection(theme);
+        Custom::EndTwoColumnPage();
     }
 
-    ImGui::PopStyleColor();
-
-    ImGui::EndChild();
-    //---------------------------------------------------//
-
-    ImGui::SameLine();
-
-    //---// Right //--------------------------------------//
-    ImGui::BeginChild("##RightChild", ImVec2(ImGui::GetContentRegionAvail()), false);
-
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 1.f));
-
-    switch (Index)
+    // Page 4
+    if (Custom::BeginTwoColumnPage(3, theme))
     {
-    case 0:
-        ImGui::BeginChild("##C100", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.7f), true);
-
-        ImGui::Text("FOV Setting");
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        ImGui::Checkbox("Draw FOV", &g.bShowFOV);
-        ImGui::Checkbox("Rainbow FOV", &g.bRainbowFOV);
-        ImGui::ColorEdit3("Color", &g.Color_AimFOV.Value.x);
-        ImGui::CustomSliderInt("Aim FOV", "##a_fov", &g.AimFOV, 30, 300);
-
-        ImGui::EndChild();
-        ImGui::BeginChild("##101", ImVec2(ImGui::GetContentRegionAvail()), true);
-
-        ImGui::Text("KeyBind");
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        ImGui::Combo("KeyMode", &g.AimKeyMode, AimKeyModeList, IM_ARRAYSIZE(AimKeyModeList));
-
-        ImGui::NewLine();
-
-        ImGui::Text("1st Key");
-        if (ImGui::Button(BindingID == 1 ? "< Press Any Key >" : utils::KeyNames[g.dwAimKey0], ImVec2(215.f, 22.5f))) {
-            BindingID = 1;
-            std::thread([&]() { utils::KeyBinder(g.dwAimKey0, BindingID); }).detach();
-        }
-
-        ImGui::Spacing();
-
-        ImGui::Text("2nd Key");
-        if (ImGui::Button(BindingID == 2 ? "< Press Any Key >" : utils::KeyNames[g.dwAimKey1], ImVec2(215.f, 22.5f))) {
-            BindingID = 2;
-            std::thread([&]() { utils::KeyBinder(g.dwAimKey1, BindingID); }).detach();
-        }
-
-        // 重複防止
-        if (g.dwAimKey0 == g.dwAimKey1)
-            g.dwAimKey1 = NULL;
-
-        ImGui::EndChild();
-        break;
-    case 1: // visual
-        ImGui::BeginChild("##C110", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.75f), true);
-
-        ImGui::Text("ESP Setting");
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        ImGui::Combo("GlowMode", &g.GlowStyle, GlowStyleList, IM_ARRAYSIZE(GlowStyleList));
-        ImGui::Combo("BoxMode", &g.ESP_BoxRenderMode, BoxRenderModeList, IM_ARRAYSIZE(BoxRenderModeList));
-        ImGui::Combo("BoxType", &g.ESP_BoxType, BoxTypeList, IM_ARRAYSIZE(BoxTypeList));
-
-        ImGui::CustomSliderInt("Distance", "##Distance", &g.ESP_MaxDistance, 10, 2000);
-
-        ImGui::EndChild();
-        ImGui::BeginChild("##C111", ImVec2(ImGui::GetContentRegionAvail()), true);
-
-        ImGui::Text("ESP Colors");
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        ImGui::ColorEdit3("Enemy", &g.Color_ESP_Enemy.Value.x);
-        ImGui::ColorEdit3("Visible", &g.Color_ESP_Visible.Value.x);
-        ImGui::ColorEdit3("AimTarget", &g.Color_ESP_AimTarget.Value.x);
-        ImGui::ColorEdit3("Team", &g.Color_ESP_Team.Value.x);
-        ImGui::ColorEdit3("Shadow", &g.Color_ESP_Shadow.Value.x, ImGuiColorEditFlags_DisplayRGB);
-
-        ImGui::NewLine();
-
-        ImGui::SeparatorText("Alpha");
-        ImGui::CustomSliderFloat("Global", "##GlobalA", &g.m_flGlobalAlpha, 0.3f, 1.0f, "%.2f");
-        ImGui::CustomSliderFloat("Shadow", "##ShadowA", &g.m_flShadowAlpha, 0.1f, 0.3f, "%.2f");
-
-        ImGui::EndChild();
-        break;
-    case 2: // misc
-        ImGui::BeginChild("##C120", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 3.5f), true);
-
-        ImGui::Text("RecoilControll System");
-        ImGui::Separator();
-        ImGui::Spacing();
-        ImGui::Checkbox("Enable##RCS", &g.RecoilControllSystem);
-        ImGui::CustomSliderFloat("RCS Scale", "##RCS_SCL", &g.RCS_Scale, 0.f, 1.f, "%.2f");
-
-        ImGui::EndChild();
-        ImGui::BeginChild("##C121", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.75f), true);
-
-        ImGui::Text("ViewModel Glow");
-        ImGui::Separator();
-        ImGui::Spacing();
-        ImGui::CustomSliderFloat("RainbowSpeed", "##VMG", &g.VMG_Rate, 1.f, 15.f, "%.f");
-        ImGui::Combo("Type##VMG", &g.VMG_Type, ViewModelGlowTypeList, IM_ARRAYSIZE(ViewModelGlowTypeList));
-
-        ImGui::EndChild();
-        break;
-    case 3: // system
-    {
-        ImGui::BeginChild("##130", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 1.25f), true);
-
-        ImGui::Text("Config");
-        ImGui::Separator();
-        ImGui::Spacing();
-
+        Custom::BeginSection("Config", theme);
+        /*--------------------------------------------------------*/
+        
+        static int configIndex = 0;
+        
         // 設定ファイルのリストを作成
-        auto vec = config.GetFileList();
-        const char** FileList = new const char* [vec.size()];
+        std::vector<std::string> configs = config.GetConfigList();
 
-        for (size_t j = 0; j < vec.size(); j++)
-            FileList[j] = vec[j].c_str();
+        if (configIndex >= static_cast<int>(configs.size()))
+            configIndex = configs.empty() ? 0 : static_cast<int>(configs.size()) - 1;
+
+        std::vector<const char*> items;
+        items.reserve(configs.size());
+
+        for (const std::string& configName : configs)
+            items.push_back(configName.c_str());
+
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+        ImGui::ListBox("##List", &configIndex, items.data(), static_cast<int>(items.size()));
+
+		if (ImGui::Button("Save", ImVec2(ImGui::GetContentRegionAvail().x / 2.f - 4.f, 20.f)) && !items.empty())
+		{
+			config.SaveSetting(items[configIndex]);
+		}
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Load", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)) && !items.empty())
+        {
+            config.LoadSetting(items[configIndex]);
+        }
 
         if (!g.GenerateFlag)
         {
             if (ImGui::Button("Generate ConfigFile", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
             {
-                g.GenerateFlag = true;
                 g.newConfigName.clear();
-                utils::EnableKeyboardHook();
+                g.GenerateFlag = true;
             }
         }
 
         if (g.GenerateFlag)
         {
-            ImGui::Text("New config name:");
+            static std::array<char, 64> configNameBuffer{};
 
-            static char ngw[64]{};
-            strcpy_s(ngw, 64, g.newConfigName.c_str());
-            ImGui::InputText(".json", ngw, IM_ARRAYSIZE(ngw));
+			input.EnableKeyboardHook();
 
-            if (ImGui::Button("Generate", ImVec2(ImGui::GetContentRegionAvail().x / 2.f, 20.f)) || utils::IsKeyDown(VK_RETURN))
+            ImGui::Text("Config name:");
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+            const bool submitByEnter = ImGui::InputText("##new_config_name", configNameBuffer.data(), configNameBuffer.size(), ImGuiInputTextFlags_EnterReturnsTrue);
+            g.newConfigName = configNameBuffer.data();
+
+            const float halfWidth = ImGui::GetContentRegionAvail().x / 2.f - 4.f;
+            if (ImGui::Button("OK", ImVec2(halfWidth, 20.f)) || submitByEnter)
             {
-                if (g.newConfigName.size() > 1) {
-                    std::thread([&]() { config.CreateNewConfig(g.newConfigName); }).join();
-                }
+                if (!g.newConfigName.empty())
+                    config.CreateConfig(g.newConfigName);
 
-                g.GenerateFlag = false;
+                input.DisableKeyboardHook();
+                configNameBuffer.fill('\0');
                 g.newConfigName.clear();
-                utils::DisableKeyboardHook();
+                g.GenerateFlag = false;
             }
+
             ImGui::SameLine();
             if (ImGui::Button("Cancel", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
             {
-                g.GenerateFlag = false;
+				input.DisableKeyboardHook();
+                configNameBuffer.fill('\0');
                 g.newConfigName.clear();
-                utils::DisableKeyboardHook();
+                g.GenerateFlag = false;
             }
+
         }
 
-        ImGui::Spacing();
-        ImGui::Spacing();
-
-        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-        ImGui::ListBox("##List", &FileNum, FileList, vec.size());
-
-        if (!g.GenerateFlag && !DeleteFlag)
-        {
-            // Button
-            if (ImGui::Button("Save", ImVec2(ImGui::GetContentRegionAvail().x / 3.f - 4.f, 20.f))) {
-                std::thread([&]() { config.SaveSetting(FileList[FileNum]); }).join();
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Load", ImVec2(ImGui::GetContentRegionAvail().x / 2.f - 4.f, 20.f)) && vec.size() != 0) {
-                std::thread([&]() { config.LoadSetting(FileList[FileNum]); }).join();
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Delete", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)) && vec.size() != 0) {
-                DeleteFlag = true;
-            }
-        }
-
-        if (DeleteFlag)
+        if (deleteFlag)
         {
             ImGui::Text("Delete this file?");
 
             if (ImGui::Button("OK", ImVec2(90.f, 20.f))) {
-                std::thread([&]() { config.DeleteConfig(FileList[FileNum]); }).join();
-                DeleteFlag = false;
+                if (!items.empty()) {
+                    config.DeleteConfig(items[configIndex]);
+                }
+                deleteFlag = false;
             }
 
             ImGui::SameLine();
 
             if (ImGui::Button("Cancel", ImVec2(90.f, 20.f)))
-                DeleteFlag = false;
+                deleteFlag = false;
         }
 
-        delete[] FileList;
+        /*--------------------------------------------------------*/
+        Custom::EndSection(theme);
+        Custom::TwoColumnSplit(theme);
+        Custom::BeginSection("Any.", theme);
+        /*--------------------------------------------------------*/
 
-        ImGui::EndChild();
-        ImGui::BeginChild("##131", ImVec2(ImGui::GetContentRegionAvail()), true);
 
-        ImGui::Text("Exit");
-        ImGui::Separator();
-        ImGui::Spacing();
-        if (ImGui::Button("Exit", ImVec2(ImGui::GetContentRegionAvail().x, 30.f)))
-            g_ApplicationActive = false;
 
-        ImGui::EndChild();
-    }   break;
-    default:
-        break;
+        /*--------------------------------------------------------*/
+        Custom::EndSection(theme);
+        Custom::EndTwoColumnPage();
     }
 
-    ImGui::PopStyleColor();
+    // Page 4
+    if (Custom::BeginTwoColumnPage(4, theme))
+    {
+        Custom::BeginSection("Setting", theme);
+        /*--------------------------------------------------------*/
 
-    ImGui::EndChild();
-    ImGui::EndChild();
-    //---------------------------------------------------//
+		Custom::Toggle("SpectatorList", &g.SpectatorListEnable, theme);
 
+        Custom::Checkbox("Crosshair", &g.CrosshairEnable, theme);
+
+		Custom::SliderInt("MaxFPS", &g.MaxFramerate, 30, 500, theme);
+
+
+		Custom::SectionHeader("Crosshair", theme);
+
+        Custom::Checkbox("Enable##Crosshair", &g.CrosshairEnable, theme);
+        Custom::SliderInt("CrosshairSize", &g.CrosshairSize, 1, 10, theme);
+        ImGui::ColorEdit4("Color##C", &g.Color_Crosshair.Value.x);
+        Custom::Combo("Type##C", &g.CrosshairType, CrosshairList, IM_ARRAYSIZE(CrosshairList), theme);
+
+        /*--------------------------------------------------------*/
+        Custom::EndSection(theme);
+        Custom::TwoColumnSplit(theme);
+        Custom::BeginSection("Any.", theme);
+        /*--------------------------------------------------------*/
+
+        if (Custom::Button("Exit", theme))
+            g_ApplicationActive.store(false);
+
+        /*--------------------------------------------------------*/
+        Custom::EndSection(theme);
+        Custom::EndTwoColumnPage();
+    }
+
+    Custom::EndContentArea();
+    Custom::PopTheme();
     ImGui::End();
 }

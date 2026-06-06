@@ -19,6 +19,9 @@ void CFramework::UpdateList()
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
 
+        // 同クラス内のスナップショット用変数に代入する為の関数
+        CGameDataSnapshot next;
+
         // Read EntityList
         const uintptr_t EntityList = m.m_dwClientBaseAddr + offset::dwEntityList;
         auto list_addr = m.Read<uintptr_t>(EntityList);
@@ -26,29 +29,29 @@ void CFramework::UpdateList()
         if (list_addr == NULL)
             continue;
 
-        // Get Local
-        CEntity tmpLocal = CEntity();
+        // Local
         uintptr_t pLocalPlayer = m.Read<uintptr_t>(m.m_dwClientBaseAddr + offset::dwLocalPlayer);
 
         if (pLocalPlayer != NULL)
         {
-            tmpLocal.m_address = pLocalPlayer;
+			next.m_localplayer.m_address = pLocalPlayer;
 
-            if (!tmpLocal.Update())
+            if (!next.m_localplayer.Update())
                 continue;
 
-            tmpLocal.UpdateStatic();
+            next.m_localplayer.UpdateStatic();
         }
 
-        auto list = m.Read<entitylist_t>(EntityList);
+        entitylist_t list{};
 
-        std::vector<CEntity> tmpEntityList;
-        std::vector<std::string> tmpSpectator;
+        // ちゃんと意図したサイズを読み取れているかを確認
+        if (!m.SafeRead<entitylist_t>(EntityList, list))
+            continue;
 
         for (int i = 0; i < ReadCount; i++)
         {
             // 無効なポインタではないか、Localでははいか.
-            if (list.entity[i].address != NULL && list.entity[i].address != tmpLocal.m_address)
+            if (list.entity[i].address != NULL && list.entity[i].address != next.m_localplayer.m_address)
             {
                 // SignifierNameを取得。エンティティの種類別にある固有の名前みたいなもの.
                 char SignifierName[32]{};
@@ -63,8 +66,7 @@ void CFramework::UpdateList()
                     if (strcmp(SignifierName, "player") == 0 || g.ESP_NPC && strcmp(SignifierName, "npc_dummie") == 0)
                     {
                         // 格納用にCEntityインスタンスを作り、情報を格納してあげる.
-                        CEntity p = CEntity();
-                        p.m_address = list.entity[i].address;
+						CEntity p{ list.entity[i].address };
                         p.m_iSignifierName = SignifierName;
                         p.UpdateStatic(); // 静的な情報を取得する.
 
@@ -74,20 +76,18 @@ void CFramework::UpdateList()
                         // 観戦中だったら
                         if (strcmp(SignifierName, "player") == 0 && p.IsSpectator()) {
                             std::string result = p.m_szName;
-                            result += p.GetObservingTarget(EntityList).m_address == tmpLocal.m_address ? "[ * ]" : "";
-                            tmpSpectator.push_back(result);
+                            result += p.GetObservingTarget(EntityList).m_address == next.m_localplayer.m_address ? "[ * ]" : "";
+                            next.m_spectatorlist.push_back(result);
                         }
                         else if (!p.IsDead()) {
-                            tmpEntityList.push_back(p); // 生きてたら
+                            next.m_entitylist.push_back(p); // 生きてたら
                         } 
                     }
                 }
             }
         }
 
-        std::lock_guard<std::mutex> lock(mtx);
-        m_CLocal = tmpLocal;
-        m_CEntityList = tmpEntityList;
-        m_CSpectatorList = tmpSpectator;
+        std::lock_guard<std::mutex> lock(m_lock);
+        m_NextGameDataSnapshot = next;
     }
 }

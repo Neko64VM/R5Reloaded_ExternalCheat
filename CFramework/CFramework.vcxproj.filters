@@ -43,6 +43,12 @@
     <Filter Include="Framework\ImGui\Fonts">
       <UniqueIdentifier>{00a1aa39-9b37-4ac6-9211-24f9f71b9cd7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Framework\Render">
+      <UniqueIdentifier>{f05253f6-620a-46c9-bcbf-70408632b9b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Framework\Input">
+      <UniqueIdentifier>{225872b5-fd2a-45f8-98e2-e536e2c0d0a8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -53,9 +59,6 @@
     </ClCompile>
     <ClCompile Include="Cheat\SDK\CEntity\CEntity.cpp">
       <Filter>Cheat\SDK\CEntity</Filter>
-    </ClCompile>
-    <ClCompile Include="Framework\Framework.cpp">
-      <Filter>Framework</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Config\Config.cpp">
       <Filter>Framework\Config</Filter>
@@ -96,7 +99,7 @@
     <ClCompile Include="Framework\ImGui\imgui_widgets.cpp">
       <Filter>Framework\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="Cheat\Features.cpp">
+    <ClCompile Include="Cheat\CFramework.cpp">
       <Filter>Cheat</Filter>
     </ClCompile>
     <ClCompile Include="Cheat\Menu.cpp">
@@ -108,8 +111,17 @@
     <ClCompile Include="Cheat\UpdateList.cpp">
       <Filter>Cheat</Filter>
     </ClCompile>
-    <ClCompile Include="Cheat\Render.cpp">
-      <Filter>Cheat</Filter>
+    <ClCompile Include="Framework\Config\ConfigManager.cpp">
+      <Filter>Framework\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Render\Render.cpp">
+      <Filter>Framework\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Utils.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Input\Input.cpp">
+      <Filter>Framework\Input</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -118,9 +130,6 @@
     </ClInclude>
     <ClInclude Include="Cheat\SDK\CEntity\CEntity.h">
       <Filter>Cheat\SDK\CEntity</Filter>
-    </ClInclude>
-    <ClInclude Include="Framework\Framework.h">
-      <Filter>Framework</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Config\Config.h">
       <Filter>Framework\Config</Filter>
@@ -173,10 +182,25 @@
     <ClInclude Include="Cheat\CFramework.h">
       <Filter>Cheat</Filter>
     </ClInclude>
+    <ClInclude Include="Framework\Config\ConfigManager.h">
+      <Filter>Framework\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Render\Render.hpp">
+      <Filter>Framework\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Utils.hpp">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Input\Input.hpp">
+      <Filter>Framework\Input</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
     <None Include="..\.gitignore" />
     <None Include="..\LICENSE" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\r5reloaded_dump.txt" />
   </ItemGroup>
 </Project>

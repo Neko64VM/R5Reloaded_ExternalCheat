@@ -23,13 +23,13 @@ class Memory
 {
 private:
 	DWORD m_dwPID;
-
-	void SetBaseAddress();
+	std::string m_szTargetMmodule{ "r5apex.exe" };
 	MODULEENTRY32 GetModule(const std::string moduleName);
 	PROCESSENTRY32 GetProcess(const std::string processName);
 public:
 	HANDLE m_hProcess;
 	uintptr_t m_dwClientBaseAddr;
+	uintptr_t cacheBaseAddress;
 
 	bool AttachProcess(const char* targetName, InitializeMode InitMode);
 	void DetachProcess();
@@ -46,6 +46,14 @@ public:
 		ReadProcessMemory(m_hProcess, reinterpret_cast<const void*>(address), &value, sizeof(T), NULL);
 		return value;
 	}
+
+	template <class T>
+	constexpr bool SafeRead(uintptr_t address, T& out)
+	{
+		SIZE_T bytesRead{};
+		return ReadProcessMemory(m_hProcess, reinterpret_cast<LPCVOID>(address), &out, sizeof(T), &bytesRead) && bytesRead == sizeof(T);
+	}
+
 	template <typename T>
 	constexpr void Write(const uintptr_t& address, const T& value) const noexcept
 	{

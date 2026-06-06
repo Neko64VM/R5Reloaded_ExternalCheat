@@ -1,9 +1,9 @@
-#include "CFramework.h"
+﻿#include "CFramework.h"
+#include "../Framework/Memory/Memory.h"
 #include <corecrt_math_defines.h>
 
-CEntity lastTarget{ CEntity() };
-CEntity lockedTarget{ CEntity() };
-auto g_gui = std::make_unique<CRenderer>();
+CEntity lastTarget{ 0 };
+CEntity lockedTarget{ 0 };
 
 // 画面上中央に表示する観戦者警告のテキスト
 constexpr char spectator_warning_text[32]{ "[ Spectator Found! ]" };
@@ -17,13 +17,13 @@ void CFramework::RenderInfo()
 {
     // FPS
     std::string framerate = std::to_string((int)ImGui::GetIO().Framerate) + "FPS";
-    g_gui->String(Vector2(3.f, 3.f), TEXT_COLOR_DEFAULT, 1.f, framerate.c_str());
+    m_gui->String(Vector2(3.f, 3.f), TEXT_COLOR_DEFAULT, 1.f, framerate.c_str());
 
     m_screenSize = g.gameSize;
 
     // FOV Circle
     if (g.AimBotEnable && g.bShowFOV)
-        g_gui->Circle(Vector2((m_screenSize.x / 2.f), (m_screenSize.y / 2.f)), g.AimFOV, g.bRainbowFOV ? g_gui->ApplyAlpha(g_gui->GenerateRainbow(), 0.35f) : g.Color_AimFOV);
+        m_gui->Circle(Vector2((m_screenSize.x / 2.f), (m_screenSize.y / 2.f)), g.AimFOV, g.bRainbowFOV ? m_gui->ApplyAlpha(m_gui->GenerateRainbow(), 0.35f) : g.Color_AimFOV);
 
     // Crosshair
     if (g.CrosshairEnable)
@@ -32,29 +32,21 @@ void CFramework::RenderInfo()
         {
         case 0: {
             ImVec2 screenCenter = ImVec2(m_screenSize.x / 2, m_screenSize.y / 2);
-            ImColor ch_color = g_gui->ApplyAlpha(g.Color_Crosshair, g.m_flGlobalAlpha);
+            ImColor ch_color = m_gui->ApplyAlpha(g.Color_Crosshair, g.m_flGlobalAlpha);
 
-            g_gui->Line(Vector2(screenCenter.x - g.CrosshairSize, screenCenter.y), Vector2((screenCenter.x + g.CrosshairSize) + 1, screenCenter.y), ch_color, 1.f);
-            g_gui->Line(Vector2(screenCenter.x, screenCenter.y - g.CrosshairSize), Vector2(screenCenter.x, (screenCenter.y + g.CrosshairSize) + 1), ch_color, 1.f);
+            m_gui->Line(Vector2(screenCenter.x - g.CrosshairSize, screenCenter.y), Vector2((screenCenter.x + g.CrosshairSize) + 1, screenCenter.y), ch_color, 1.f);
+            m_gui->Line(Vector2(screenCenter.x, screenCenter.y - g.CrosshairSize), Vector2(screenCenter.x, (screenCenter.y + g.CrosshairSize) + 1), ch_color, 1.f);
         }   break;
         case 1:
-            g_gui->CircleFilled(Vector2(m_screenSize.y / 2.f, m_screenSize.y / 2.f), g.CrosshairSize + 1, ImColor(0.f, 0.f, 0.f, 1.f), 0.85f); // 0.85f == CrosshairAlpha
-            g_gui->CircleFilled(Vector2(m_screenSize.x / 2.f, m_screenSize.y / 2.f), g.CrosshairSize, g.Color_Crosshair, 0.85f);
+            m_gui->CircleFilled(Vector2(m_screenSize.y / 2.f, m_screenSize.y / 2.f), g.CrosshairSize + 1, ImColor(0.f, 0.f, 0.f, 1.f), 0.85f); // 0.85f == CrosshairAlpha
+            m_gui->CircleFilled(Vector2(m_screenSize.x / 2.f, m_screenSize.y / 2.f), g.CrosshairSize, g.Color_Crosshair, 0.85f);
             break;
         }
     }
 
-    // SpectatorListの取得
-    std::vector<std::string> spectator_list;
-
+    if (g.SpectatorListEnable && m_GameDataSnapshot.m_spectatorlist.size() != 0)
     {
-        std::lock_guard<std::mutex> lock(mtx);
-        spectator_list = m_CSpectatorList;
-    }
-
-    if (g.SpectatorListEnable && spectator_list.size() != 0)
-    {
-        g_gui->String(Vector2(m_screenSize.x / 2 - (ImGui::CalcTextSize(spectator_warning_text).x / 2), 2.f), TEXT_COLOR_WARNING, 1.f, spectator_warning_text);
+        m_gui->String(Vector2(m_screenSize.x / 2 - (ImGui::CalcTextSize(spectator_warning_text).x / 2), 2.f), TEXT_COLOR_WARNING, 1.f, spectator_warning_text);
 
         // 初回でウィンドウ位置を決める
         static bool first = true;
@@ -64,11 +56,10 @@ void CFramework::RenderInfo()
             first = false;
         }
 
-        ImGui::SetNextWindowBgAlpha(spectator_list.size() > 0 ? 0.9f : 0.35f);
+        ImGui::SetNextWindowBgAlpha(m_GameDataSnapshot.m_spectatorlist.size() > 0 ? 0.9f : 0.35f);
         ImGui::Begin("Spectator(s)", &g.bShowMenu, ImGuiWindowFlags_NoCollapse);
 
-        for (const auto& name : spectator_list)
-        {
+        for (const auto& name : m_GameDataSnapshot.m_spectatorlist) {
             ImGui::Text(name.c_str());
         }
 
@@ -79,21 +70,22 @@ void CFramework::RenderInfo()
 void CFramework::RenderESP()
 {
     // UpdateLocal
-    if (!m_CLocalCopy.Update())
+    if (!m_GameDataSnapshot.m_localplayer.Update())
         return;
-
+    
     // 各リソースの準備
-    CEntity target = CEntity(); // AimBot
-    float MinFov{ FLT_MAX };
-    float MinDistance{ FLT_MAX };
+    CEntity target = CEntity(0);
+    float minFov{ FLT_MAX };
+    float minDistance{ FLT_MAX };
     const Vector2 ScreenCenter{ m_screenSize.x / 2.f, m_screenSize.y / 2.f };
 
+	// ViewMatrixの取得
     uintptr_t ViewRenderer = m.Read<uintptr_t>(m.m_dwClientBaseAddr + offset::ViewRender); // ViewMatrix
     uintptr_t pViewMatrix = m.Read<uintptr_t>(ViewRenderer + offset::ViewMatrix);
     Matrix ViewMatrix = m.Read<Matrix>(pViewMatrix);
 
-    const uintptr_t entitylist = m.m_dwClientBaseAddr + offset::dwEntityList; // その他
-    const float baseTime = m_CLocalCopy.GetTimeBase(); // ClientState辺りのものに置き換えられない？
+    const uintptr_t entitylist = m.m_dwClientBaseAddr + offset::dwEntityList;
+    const float baseTime = m_GameDataSnapshot.m_localplayer.GetTimeBase(); // ClientState辺りのものに置き換えられない？
 
     // 2D Radar
     const float s_radar_scale{ 12.f };
@@ -104,30 +96,23 @@ void CFramework::RenderESP()
     // Radar frame
     if (g.RadarEnable)
     {
-        //g_gui->Rect(Vector2(s_radar_pos), Vector2(s_radar_pos + s_radar_size), COLOR_RADAR_FRAME);
-        g_gui->Line(Vector2(s_radar_center.x, s_radar_pos.y), Vector2(s_radar_center.x, s_radar_pos.y + s_radar_size.y), COLOR_RADAR_FRAME, 1.f);
-        g_gui->Line(Vector2(s_radar_pos.x, s_radar_center.y), Vector2(s_radar_pos.x + s_radar_size.x, s_radar_center.y), COLOR_RADAR_FRAME, 1.f);
-        g_gui->CircleFilled(s_radar_center, 3.f, g.Color_ESP_Team, 1.f);
+        //m_gui->Rect(Vector2(s_radar_pos), Vector2(s_radar_pos + s_radar_size), COLOR_RADAR_FRAME);
+        m_gui->Line(Vector2(s_radar_center.x, s_radar_pos.y), Vector2(s_radar_center.x, s_radar_pos.y + s_radar_size.y), COLOR_RADAR_FRAME, 1.f);
+        m_gui->Line(Vector2(s_radar_pos.x, s_radar_center.y), Vector2(s_radar_pos.x + s_radar_size.x, s_radar_center.y), COLOR_RADAR_FRAME, 1.f);
+        m_gui->CircleFilled(s_radar_center, 3.f, g.Color_ESP_Team, 1.f);
 
         for (int r = 1; 3 > r; r++) {
-            g_gui->Circle(s_radar_center, 50.f * r, COLOR_RADAR_FRAME);
+            m_gui->Circle(s_radar_center, 50.f * r, COLOR_RADAR_FRAME);
         }
     }
 
-    std::vector<CEntity> entity_list;
-
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        entity_list = m_CEntityList;
-    }
-
-    for (auto& entity : entity_list)
+    for (auto& entity : m_GameDataSnapshot.m_entitylist)
     {
         if (!entity.Update())
             continue;
 
         // 距離を取得
-        const float flDistance = (m_CLocalCopy.m_vecAbsOrigin - entity.m_vecAbsOrigin).Length() * 0.01905f;
+        const float flDistance = (m_GameDataSnapshot.m_localplayer.m_vecAbsOrigin - entity.m_vecAbsOrigin).Length() * 0.01905f;
 
         // 各種チェック
         if (g.ESP_MaxDistance < flDistance)
@@ -146,13 +131,13 @@ void CFramework::RenderESP()
             const int bScale = (box.right - box.left) / 3.f;
 
             // 色を決める
-            ImColor shadow_color = g_gui->ApplyAlpha(g.Color_ESP_Shadow, g.m_flShadowAlpha);
-            ImColor tempColor = m_CLocalCopy.m_iTeamNum == entity.m_iTeamNum ? g.Color_ESP_Team : entity.IsVisible(baseTime) ? g.Color_ESP_Visible : g.Color_ESP_Enemy;
+            ImColor shadow_color = m_gui->ApplyAlpha(g.Color_ESP_Shadow, g.m_flShadowAlpha);
+            ImColor tempColor = m_GameDataSnapshot.m_localplayer.m_iTeamNum == entity.m_iTeamNum ? g.Color_ESP_Team : entity.IsVisible(baseTime) ? g.Color_ESP_Visible : g.Color_ESP_Enemy;
 
             if (entity.m_address == lastTarget.m_address)
                 tempColor = g.Color_ESP_AimTarget;
 
-            color = g_gui->ApplyAlpha(tempColor, g.m_flGlobalAlpha);
+            color = m_gui->ApplyAlpha(tempColor, g.m_flGlobalAlpha);
 
             // Glow
             switch (g.GlowStyle)
@@ -169,12 +154,12 @@ void CFramework::RenderESP()
             }
 
             // TeamCheck
-            if (!g.ESP_Team && entity.m_iTeamNum == m_CLocalCopy.m_iTeamNum)
+            if (!g.ESP_Team && entity.m_iTeamNum == m_GameDataSnapshot.m_localplayer.m_iTeamNum)
                 continue;
 
             // Line
             if (g.bLine)
-                g_gui->Line(Vector2(m_screenSize.x / 2.f, m_screenSize.y), Vector2(box.right - (Width / 2), box.bottom), color, g.m_flGlobalAlpha);
+                m_gui->Line(Vector2(m_screenSize.x / 2.f, m_screenSize.y), Vector2(box.right - (Width / 2), box.bottom), color, g.m_flGlobalAlpha);
 
             BoundingBox bbox{};
 
@@ -208,15 +193,15 @@ void CFramework::RenderESP()
 
                 // BoxFilled
                 if (g.bFilled)
-                    g_gui->RectFilled(box.left, box.top, box.right, box.bottom, g_gui->ApplyAlpha(shadow_color, g.m_flShadowAlpha));
+                    m_gui->RectFilled(bbox.left, bbox.top, bbox.right, bbox.bottom, m_gui->ApplyAlpha(shadow_color, g.m_flShadowAlpha));
 
                 switch (g.ESP_BoxType)
                 {
                 case 0:
-                    g_gui->Rect(Vector2(box.left, box.top), Vector2(box.right, box.bottom), color);
+                    m_gui->Rect(Vector2(bbox.left, bbox.top), Vector2(bbox.right, bbox.bottom), color);
                     break;
                 case 1:
-                    g_gui->CorneredBox(Vector2(box.left, box.top), Vector2(box.right, box.bottom), bScale, color);
+                    m_gui->CorneredBox(Vector2(bbox.left, bbox.top), Vector2(bbox.right, bbox.bottom), bScale, color);
                     break;
                 }
             }
@@ -231,25 +216,22 @@ void CFramework::RenderESP()
             // Health/Shieldbar
             if (g.bHealth)
             {
-                g_gui->Healthbar(Vector2(box.left - 3, box.top + 1), Vector2(box.left - 2, box.bottom - 1), entity.m_iHealth , entity.m_iMaxHealth, g.Color_ESP_Shadow, g.m_flGlobalAlpha);
+                m_gui->Healthbar(Vector2(bbox.left - 3, bbox.top + 1), Vector2(bbox.left - 2, bbox.bottom - 1), entity.m_iHealth , entity.m_iMaxHealth, g.Color_ESP_Shadow, g.m_flGlobalAlpha);
 
                 if (entity.m_shieldHealth >= 0)
-                    g_gui->Shieldbar(Vector2(box.left - 7, box.top + 1), Vector2(box.left - 6, box.bottom - 1), entity.m_shieldHealth, entity.m_shieldHealthMax, shadow_color, g.m_flGlobalAlpha);
+                    m_gui->Shieldbar(Vector2(bbox.left - 7, bbox.top + 1), Vector2(bbox.left - 6, bbox.bottom - 1), entity.m_shieldHealth, entity.m_shieldHealthMax, shadow_color, g.m_flGlobalAlpha);
             }
 
             // Name
             if (g.bName)
-                g_gui->StringEx(Vector2(box.right - Center - (ImGui::CalcTextSize(entity.m_szName).x / 2.f), box.top - ImGui::GetFontSize()), shadow_color, g.m_flGlobalAlpha, ImGui::GetFontSize(), entity.m_szName);
+                m_gui->StringEx(Vector2(bbox.right - Center - (ImGui::CalcTextSize(entity.m_szName).x / 2.f), bbox.top - ImGui::GetFontSize()), shadow_color, g.m_flGlobalAlpha, ImGui::GetFontSize(), entity.m_szName);
 
             // Distance & Weapon
             std::string szResult{};
 
             // Weapon
             if (g.bWeapon) {
-                char szWeapon[64]{};
-                uintptr_t pWeaponName = m.Read<uintptr_t>(entity.GetCurrentWeapon(entitylist) + 0x1870);
-                m.ReadString(pWeaponName, szWeapon, 64);
-                szResult += szWeapon;
+                szResult += entity.GetWeaponName(entitylist);
             }
             
             // Distance
@@ -258,14 +240,14 @@ void CFramework::RenderESP()
 
             // Rendering
             if (g.bDistance || g.bWeapon && szResult.size() > 0)
-                g_gui->StringEx(Vector2(box.right - Center - (ImGui::CalcTextSize(szResult.c_str()).x / 2.f), box.bottom + 1), shadow_color, g.m_flGlobalAlpha, ImGui::GetFontSize(), szResult.c_str());
+                m_gui->StringEx(Vector2(box.right - Center - (ImGui::CalcTextSize(szResult.c_str()).x / 2.f), box.bottom + 1), shadow_color, g.m_flGlobalAlpha, ImGui::GetFontSize(), szResult.c_str());
         }
 
         // 2D Radar
         if (g.RadarEnable)
         {
-            Vector3 delta = entity.m_vecAbsOrigin - m_CLocalCopy.m_vecAbsOrigin;
-            float yaw = m_CLocalCopy.GetViewAngle().y * (M_PI / 180.f); // ラジアンに変換
+            Vector3 delta = entity.m_vecAbsOrigin - m_GameDataSnapshot.m_localplayer.m_vecAbsOrigin;
+            float yaw = m_GameDataSnapshot.m_localplayer.GetViewAngle().y * (M_PI / 180.f); // ラジアンに変換
             float cosYaw = cosf(yaw);
             float sinYaw = sinf(yaw);
 
@@ -279,7 +261,7 @@ void CFramework::RenderESP()
             rotated.x = std::clamp(rotated.x, s_radar_pos.x, s_radar_pos.x + s_radar_size.x); // 四角形の外にレンダリングされないようにする
             rotated.y = std::clamp(rotated.y, s_radar_pos.y, s_radar_pos.y + s_radar_size.y);
 
-            g_gui->CircleFilled(rotated, 3.f, color, 1.f);
+            m_gui->CircleFilled(rotated, 3.f, color, 1.f);
         }
         
         if (flDistance > g.AimMaxDistance)
@@ -307,35 +289,31 @@ void CFramework::RenderESP()
             {
                 float FOV = abs((ScreenCenter - boneCheck).Length());
 
-                if (FOV < g.AimFOV * 1.1f)
+                if (FOV < g.AimFOV)
                 {
                     switch (g.AimMode)
                     {
                     case 0: // Crosshair
-                        if (MinFov > FOV) {
-                            if (target.m_address == NULL || MinDistance > flDistance)
-                            {
-                                target = entity;
-                                MinFov = FOV;
-                                MinDistance = flDistance;
-                            }
+                        if (minFov > FOV) {
+                            target = entity;
+                            minFov = FOV;
                         }
                         break;
                     case 1: // Game Distance
-                        if (MinDistance > flDistance) {
+                        if (minDistance > flDistance) {
                             target = entity;
-                            MinDistance = flDistance;
+                            minDistance = flDistance;
                         }
                         break;
                     }
 
-                    break;
+                    continue;
                 }
             }
         }
         else
         {
-            lastTarget = CEntity();
+            lastTarget = CEntity(0);
         }
     }
 
@@ -354,9 +332,9 @@ void CFramework::RenderESP()
 
         // Simple prediction
         Vector3 targetPos = target.GetBoneByID(boneId);
-        const float distance = ((m_CLocalCopy.m_vecAbsOrigin - targetPos).Length() * 0.01905f);
+        const float distance = ((m_GameDataSnapshot.m_localplayer.m_vecAbsOrigin - targetPos).Length() * 0.01905f);
 
-        uintptr_t latestWeapon = m_CLocalCopy.GetCurrentWeapon(entitylist);
+        uintptr_t latestWeapon = m_GameDataSnapshot.m_localplayer.GetCurrentWeapon(entitylist);
 
         float speed = m.Read<float>(latestWeapon + 0x1CB8);
         float gravity = m.Read<float>(latestWeapon + 0x1C44) * 1000; 
@@ -373,17 +351,17 @@ void CFramework::RenderESP()
 
         targetPos += predict;
 
-        Vector2 Angle = CalcAngle(m_CLocalCopy.camera_origin, targetPos);
-        Vector2 ViewAngle = m_CLocalCopy.GetViewAngle();
+        Vector2 Angle = CalcAngle(m_GameDataSnapshot.m_localplayer.camera_origin, targetPos);
+        Vector2 ViewAngle = m_GameDataSnapshot.m_localplayer.GetViewAngle();
         Vector2 Delta{};
 
         // NoSway
         if (g.bRemoveSway)
         {
-            Vector2 Breath = m_CLocalCopy.GetSwayAngle() - ViewAngle;
+            Vector2 AimSway = m_GameDataSnapshot.m_localplayer.GetSwayAngle() - ViewAngle;
 
-            if (Breath.x != 0.f || Breath.y != 0.f)
-                Delta = (Angle - ViewAngle) - Breath;
+            if (AimSway.x != 0.f || AimSway.y != 0.f)
+                Delta = (Angle - ViewAngle) - AimSway;
         }
 
         NormalizeAngles(Delta);
@@ -391,7 +369,7 @@ void CFramework::RenderESP()
         NormalizeAngles(SmoothedAngle);
 
         if (!Vec2_Empty(SmoothedAngle))
-            m_CLocalCopy.SetViewAngle(SmoothedAngle);
+            m_GameDataSnapshot.m_localplayer.SetViewAngle(SmoothedAngle);
 
         lastTarget = target;
     }
