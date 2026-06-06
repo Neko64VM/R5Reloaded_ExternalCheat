@@ -266,6 +266,9 @@ void CFramework::RenderESP()
         
         if (flDistance > g.AimMaxDistance)
             continue;
+        
+        if (!g.bAimAtTeam && entity.m_iTeamNum == m_GameDataSnapshot.m_localplayer.m_iTeamNum)
+            continue;
 
         // AimBot - Something's wrong
         if (g.AimBotEnable && AimBotKeyCheck(g.dwAimKey0, g.dwAimKey1, g.AimKeyMode) && InScreen(&box))

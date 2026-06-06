@@ -32,6 +32,7 @@ namespace
         g.AimBotEnable = JSON.at("bAimEnable").get<bool>();
 		g.bVisCheck = JSON.at("bVisCheck").get<bool>();
 		g.bRemoveSway = JSON.at("bRemoveSway").get<bool>();
+        g.bAimAtTeam = JSON.at("bAimAtTeam").get<bool>();
         g.bShowFOV = JSON.at("bShowFOV").get<bool>();
         g.bRainbowFOV = JSON.at("bRainbowFOV").get<bool>();
         g.AimFOV = JSON.at("AimFOV").get<int>();
@@ -242,6 +243,7 @@ json ConfigManager::GetDefaultConfig()
         { "bAimEnable", true },
         { "bVisCheck", true },
         { "bRemoveSway", true },
+        { "bAimAtTeam", false },
         { "bShowFOV", true },
         { "bRainbowFOV", false },
         { "AimFOV", 150 },
@@ -364,6 +366,7 @@ void ConfigManager::SaveSetting(const std::string& configName)
     JSON["bAimEnable"] = g.AimBotEnable;
     JSON["bVisCheck"] = g.bVisCheck;
     JSON["bRemoveSway"] = g.bRemoveSway;
+    JSON["bAimAtTeam"] = g.bRemoveSway;
     JSON["bShowFOV"] = g.bShowFOV;
     JSON["bRainbowFOV"] = g.bRainbowFOV;
     JSON["AimFOV"] = g.AimFOV;

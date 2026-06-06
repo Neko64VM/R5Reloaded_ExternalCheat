@@ -31,6 +31,7 @@ struct GlobalVars
     bool AimBotEnable{ true };
     bool bVisCheck{ true };
     bool bRemoveSway{ true };
+    bool bAimAtTeam{ false };
     bool bShowFOV{ true };
     bool bRainbowFOV{ false };
 
