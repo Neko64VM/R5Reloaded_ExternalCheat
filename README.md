@@ -17,6 +17,8 @@ https://learn.microsoft.com/ja-jp/cpp/build/vscpp-step-0-installation?view=msvc-
 ## 使用したライブラリ等
 * Microsoft - SimpleMath  
 https://github.com/microsoft/DirectXTK  
+* FreeType  
+https://github.com/freetype/freetype  
 * ocornut - ImGui  
 https://github.com/ocornut/imgui
 * nlohmann - json  
